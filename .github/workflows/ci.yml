@@ -8,7 +8,7 @@ on:
 
 jobs:
   lint:
-    name: Format & Lint
+    name: Check formatting & Lint
     runs-on: ubuntu-latest
 
     strategy:
