@@ -27,8 +27,8 @@ These scripts are located in `package.json` and can be run using `npm run <scrip
 - `dev`: Runs `next dev` to start Next.js in development mode.
 - `build`: Runs `next build` to build the application for production usage.
 - `start`: Runs `next start` to start a Next.js production server.
-- `start:static`: Runs `serve out` to serve static files.
-- `lint:` Runs `next lint` to set up Next.js' built-in ESLint configuration.
+- `start:static`: Runs `serve out` to serve the built static files from `out/`.
+- `lint:` Runs `next lint` to run Next.js' built-in ESLint configuration.
 - `prettier`: Runs `prettier --write .` to format all files in the project directory.
 - `prepare`: Not intended for manual use. Used to run the pre-commit hook which formats and lints code before every commit.
 
