@@ -8,31 +8,7 @@ on:
 
 jobs:
   lint:
-    name: ESLint
-    runs-on: ubuntu-latest
-
-    strategy:
-      matrix:
-        node-version: [lts/*]
-
-    steps:
-      - name: Check out code
-        uses: actions/checkout@v4
-
-      - name: Use Node.js ${{ matrix.node-version }}
-        uses: actions/setup-node@v4
-        with:
-          node-version: ${{ matrix.node-version }}
-          cache: "npm"
-
-      - name: Install node dependencies
-        run: npm ci
-
-      - name: Run ESLint
-        run: npm run lint
-
-  prettier:
-    name: Prettier
+    name: Format & Lint
     runs-on: ubuntu-latest
 
     strategy:
@@ -54,3 +30,6 @@ jobs:
 
       - name: Run Prettier
         run: npx prettier --check src/
+
+      - name: Run ESLint
+        run: npm run lint
