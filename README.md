@@ -1,38 +1,61 @@
 # ttg-client
 
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+## Development
 
-## Getting Started
+### Prerequisites
 
-First, run the development server:
+- [Node.js v20.x 'Iron' (LTS)](https://nodejs.org/en)
+- [Git](https://git-scm.com/)
 
-```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
-```
+### Setup
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+- Clone the project to your workspace
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+  ```
+  git clone
+  ```
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+- Install required packages using npm
 
-## Learn More
+  ```
+  npm i
+  ```
 
-To learn more about Next.js, take a look at the following resources:
+- Enable these VSCode extensions in the project workspace:
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+  - [Code Spell Checker](https://marketplace.visualstudio.com/items?itemName=streetsidesoftware.code-spell-checker)
+  - [ESLint](https://marketplace.visualstudio.com/items?itemName=dbaeumer.vscode-eslint)
+  - [Prettier](https://marketplace.visualstudio.com/items?itemName=esbenp.prettier-vscode)
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+### Documentation
 
-## Deploy on Vercel
+- [TypeScript](https://www.typescriptlang.org/docs/)
+- [Next.js](https://nextjs.org/docs)
+- [TailwindCSS](https://tailwindcss.com/docs/)
+- [Node.js](https://nodejs.org/docs/latest-v20.x/api/)
+- [npm](https://docs.npmjs.com/)
+- [Git](https://git-scm.com/doc)
+- [GitHub](https://docs.github.com/)
+  - [GitHub Actions](https://docs.github.com/en/actions)
+- [ESLint](https://eslint.org/docs/v8.x/)
+- [Prettier](https://prettier.io/docs/en/)
+- [Husky](https://typicode.github.io/husky/)
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+### Scripts
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+These scripts are located in `package.json` and can be run using `npm run <script>`.
+
+#### Next.js
+
+- `dev`: Runs `next dev` to start Next.js in development mode.
+- `build`: Runs `next build` to build the application for production usage.
+- `start`: Runs `next start` to start a Next.js production server.
+- `lint:` Runs `next lint` to set up Next.js' built-in ESLint configuration.
+
+#### Serve
+
+- `start:static`: Runs `serve out` to serve static files.
+
+#### Prettier
+
+- `prettier`: Runs `prettier --write .` to format all files in the project directory.
