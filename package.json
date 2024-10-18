@@ -10,7 +10,7 @@
     "prepare": "husky"
   },
   "lint-staged": {
-    "**/*{js,ts,jsx,tsx,css,md}": ["prettier --write --ignore-unknown", "eslint"]
+    "**/*{js,ts,jsx,tsx,css,md}": ["prettier --write --ignore-unknown", "next lint"]
   },
   "dependencies": {
     "next": "14.2.15",
