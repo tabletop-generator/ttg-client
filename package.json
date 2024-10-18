@@ -1,6 +1,6 @@
 {
   "name": "ttg-client",
-  "version": "0.1.0",
+  "version": "0.0.1",
   "private": true,
   "lint-staged": {
     "**/*": "prettier --write --ignore-unknown",
@@ -19,6 +19,7 @@
     "react-dom": "^18"
   },
   "devDependencies": {
+    "@types/eslint": "^9.6.1",
     "@types/node": "^20",
     "@types/react": "^18",
     "@types/react-dom": "^18",
