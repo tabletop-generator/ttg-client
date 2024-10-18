@@ -3,10 +3,8 @@
   "version": "0.1.0",
   "private": true,
   "lint-staged": {
-    "**/*{js,ts,jsx,tsx,css,md}": [
-      "prettier --write --ignore-unknown",
-      "next lint"
-    ]
+    "**/*": "prettier --write --ignore-unknown",
+    "**/*{js,ts,jsx,tsx,json,css,md}": "next lint"
   },
   "scripts": {
     "dev": "next dev",
