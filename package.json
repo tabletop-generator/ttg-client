@@ -2,18 +2,16 @@
   "name": "ttg-client",
   "version": "0.1.0",
   "private": true,
+  "lint-staged": {
+    "**/*": "prettier --write --ignore-unknown",
+    "**/*{js,ts,jsx,tsx,json,css,md}": "next lint"
+  },
   "scripts": {
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
     "lint": "next lint",
     "prepare": "husky"
-  },
-  "lint-staged": {
-    "**/*{js,ts,jsx,tsx,css,md}": [
-      "prettier --write --ignore-unknown",
-      "next lint"
-    ]
   },
   "dependencies": {
     "next": "14.2.15",
