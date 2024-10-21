@@ -2,10 +2,6 @@
   "name": "ttg-client",
   "version": "0.0.1",
   "private": true,
-  "lint-staged": {
-    "**/*": "prettier --write --ignore-unknown",
-    "**/*{js,ts,jsx,tsx,json,css,md}": "next lint"
-  },
   "scripts": {
     "dev": "next dev",
     "build": "next build",
