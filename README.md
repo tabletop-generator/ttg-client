@@ -38,82 +38,82 @@ Please follow the [GitHub flow](https://docs.github.com/en/get-started/using-git
 
 1. **Update your local main branch**
 
-    Switch to your main branch and pull the latest changes from the remote repository:
+   Switch to your main branch and pull the latest changes from the remote repository:
 
-    ```bash
-    git switch main
-    git pull --prune
-    ```
+   ```bash
+   git switch main
+   git pull --prune
+   ```
 
-    - The `--prune` option removes any references to branches that no longer exist on the remote.
+   - The `--prune` option removes any references to branches that no longer exist on the remote.
 
 2. **Create a new branch**
 
-    Name your branch following the convention `issue-number` (e.g., `issue-1`):
+   Name your branch following the convention `issue-number` (e.g., `issue-1`):
 
-     ```bash
-     git switch -c <issue-number> main
-     ```
+   ```bash
+   git switch -c <issue-number> main
+   ```
 
-    - If no issue exists for the change you are making, please [create one](https://github.com/tabletop-generator/client/issues/new/choose).
+   - If no issue exists for the change you are making, please [create one](https://github.com/tabletop-generator/client/issues/new/choose).
 
 3. **Make your changes**
 
-    Start the development server:
-  
-     ```bash
-     npm run dev
-     ```
+   Start the development server:
+
+   ```bash
+   npm run dev
+   ```
 
 4. **Test your changes**
 
-    Run the following checks to ensure everything works as expected:
+   Run the following checks to ensure everything works as expected:
 
-     ```bash
-     npm run lint
-     npm run build
-     npm start:static
-     ```
+   ```bash
+   npm run lint
+   npm run build
+   npm start:static
+   ```
 
 5. **Review your changes**
 
-    Check which files have been changed:
+   Check which files have been changed:
 
-    ```bash
-    git status
-    ```
+   ```bash
+   git status
+   ```
 
 6. **Stage your changes**
 
-    Add the relevant files to staging:
+   Add the relevant files to staging:
 
-    ```bash
-    git add <files>
-    ```
+   ```bash
+   git add <files>
+   ```
 
 7. **Commit your changes**
 
-    Write a meaningful commit message:
+   Write a meaningful commit message:
 
-    ```bash
-    git commit -m "<commit message>"
-    ```
+   ```bash
+   git commit -m "<commit message>"
+   ```
 
 8. **Push your branch**
 
-    Push your changes and set the upstream branch:
+   Push your changes and set the upstream branch:
 
-    ```bash
-    git push -u origin <your-branch-name>
-    ```
+   ```bash
+   git push -u origin <your-branch-name>
+   ```
 
 9. **Create a pull request**
 
-    [Create a pull request](https://github.com/tabletop-generator/client/compare) on GitHub. Fill in the template and link it to the issue using:
+   [Create a pull request](https://github.com/tabletop-generator/client/compare) on GitHub. Fill in the template and link it to the issue using:
 
-    ```txt
-    Fixes #[issue number]
-    ```
+   ```txt
+   Fixes #[issue number]
+   ```
 
 ### Documentation
 
