@@ -122,10 +122,10 @@ Please follow the [GitHub flow](https://docs.github.com/en/get-started/using-git
 - **Styling:** [TailwindCSS](https://tailwindcss.com/docs/)
 - **Runtime:** [Node.js](https://nodejs.org/docs/latest-v20.x/api/)
 - **Package Manager:** [npm](https://docs.npmjs.com/)
-- **Source Code Management:**
+- **Version Control System:**
   - [Git](https://git-scm.com/doc)
   - [GitHub](https://docs.github.com/)
-    - [GitHub Actions](https://docs.github.com/en/actions)
+- **CI/CD:** [GitHub Actions](https://docs.github.com/en/actions)
 - **Linting:** [ESLint](https://eslint.org/docs/v8.x/)
 - **Formatting:** [Prettier](https://prettier.io/docs/en/)
 - **Git Hooks:** [Husky](https://typicode.github.io/husky/)
