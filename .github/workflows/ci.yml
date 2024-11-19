@@ -8,12 +8,12 @@ on:
 
 jobs:
   lint:
-    name: Check formatting & Lint
+    name: Prettier Check & ESLint
     runs-on: ubuntu-latest
 
     strategy:
       matrix:
-        node-version: [lts/*]
+        node-version: [lts/iron]
 
     steps:
       - name: Check out code
