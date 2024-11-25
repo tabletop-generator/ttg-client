@@ -3,3 +3,6 @@
 # Ignore artifacts:
 build
 coverage
+
+# Issue templates
+.github/ISSUE_TEMPLATE
