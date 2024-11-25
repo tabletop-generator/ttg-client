@@ -7,24 +7,25 @@ assignees: ""
 ---
 
 body:
+
 - type: textarea
   id: description
   attributes:
-    label: Description
-    description: "Describe the user story."
-    value: |
-      A clear and concise description of what the problem is.
+  label: Description
+  description: "Describe the user story."
+  value: |
+  A clear and concise description of what the problem is.
   validations:
-    required: true
+  required: true
 - type: textarea
   id: implementation
   attributes:
-    label: Implementation
-    description: "Describe the implementation of the user story."
-    value: |
-      A clear and concise description of how the user story should be implemented.
+  label: Implementation
+  description: "Describe the implementation of the user story."
+  value: |
+  A clear and concise description of how the user story should be implemented.
   validations:
-    required: true
+  required: true
 
 **Acceptance Criteria**
 
