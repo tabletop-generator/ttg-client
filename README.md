@@ -1,16 +1,19 @@
 # ttg-client
 
-## Development
+[![CI](https://github.com/tabletop-generator/client/actions/workflows/ci.yml/badge.svg)](https://github.com/tabletop-generator/client/actions/workflows/ci.yml)
 
-### Prerequisites
+## Prerequisites
 
+- [NVM](https://github.com/nvm-sh/nvm)
 - [Node.js v20.x 'Iron' (LTS)](https://nodejs.org/en)
 - [Git](https://git-scm.com/)
 - [Visual Studio Code](https://code.visualstudio.com/)
 
-### Setup
+## Setup
 
-- `git clone`: Clone the project to your workspace
+- `git clone <url>`: Clone the project to your workspace
+
+- `nvm install`: Install and use the correct version of node for the project
 
 - `npm i`: Install required packages using npm
 
@@ -20,19 +23,29 @@
   - [ESLint](https://marketplace.visualstudio.com/items?itemName=dbaeumer.vscode-eslint)
   - [Prettier](https://marketplace.visualstudio.com/items?itemName=esbenp.prettier-vscode)
 
-### Scripts
+## Running
+
+### Run On Host Machine
+
+See [Scripts > Running](#running-1) below.
+
+## Scripts
 
 These scripts are located in `package.json` and can be run using `npm run <script>`.
 
-- `dev`: Runs `next dev` to start Next.js in development mode.
-- `build`: Runs `next build` to build the application for production usage.
-- `start`: Runs `next start` to start a Next.js production server.
-- `start:static`: Runs `serve out` to serve the built static files from `out/`.
-- `lint:` Runs `next lint` to run Next.js' built-in ESLint configuration.
-- `prettier`: Runs `prettier --write .` to format all files in the project directory.
-- `prepare`: Not intended for manual use. Used to run the pre-commit hook which formats and lints code before every commit.
+### Running
 
-### Workflow
+- `dev`: Starts Next.js in development mode.
+- `build`: Builds the application for production usage and outputs the generated static site to `out/`.
+- `start:static`: Serves the built static files from `out/`.
+- `start`: Starts a Next.js production server. (We don't use this.)
+
+### Linting & Formatting
+
+- `lint:` Run Next.js's built-in ESLint configuration.
+- `prettier`: Runs Prettier to format all files in the project directory.
+
+## Workflow
 
 Please follow the [GitHub flow](https://docs.github.com/en/get-started/using-github/github-flow) for contributions:
 
@@ -115,9 +128,9 @@ Please follow the [GitHub flow](https://docs.github.com/en/get-started/using-git
    Fixes #[issue number]
    ```
 
-### Documentation
+## Documentation
 
-- **Language:** [TypeScript](https://www.typescriptlang.org/docs/)
+- **Language:** [JavaScript](https://developer.mozilla.org/en-US/docs/Web/JavaScript)
 - **Framework:** [Next.js](https://nextjs.org/docs)
 - **Styling:** [TailwindCSS](https://tailwindcss.com/docs/)
 - **Runtime:** [Node.js](https://nodejs.org/docs/latest-v20.x/api/)
@@ -128,4 +141,6 @@ Please follow the [GitHub flow](https://docs.github.com/en/get-started/using-git
 - **CI/CD:** [GitHub Actions](https://docs.github.com/en/actions)
 - **Linting:** [ESLint](https://eslint.org/docs/v8.x/)
 - **Formatting:** [Prettier](https://prettier.io/docs/en/)
-- **Git Hooks:** [Husky](https://typicode.github.io/husky/)
+- **Git Hooks:**
+  - [Husky](https://typicode.github.io/husky/)
+  - [lint-staged](https://github.com/lint-staged/lint-staged)
