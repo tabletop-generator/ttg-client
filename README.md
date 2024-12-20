@@ -34,7 +34,7 @@ These scripts are located in `package.json` and can be run using `npm run <scrip
 - `start`: Starts a Next.js production server.
 - `start:static`: Serves the built static files from `out/`.
 
-## Linting & Formatting
+### Linting & Formatting
 
 - `lint:` Run Next.js's built-in ESLint configuration.
 - `prettier`: Runs Prettier to format all files in the project directory.
