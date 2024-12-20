@@ -23,6 +23,12 @@
   - [ESLint](https://marketplace.visualstudio.com/items?itemName=dbaeumer.vscode-eslint)
   - [Prettier](https://marketplace.visualstudio.com/items?itemName=esbenp.prettier-vscode)
 
+## Running
+
+### Run On Host Machine
+
+See [Scripts > Running](#running-1) below.
+
 ## Scripts
 
 These scripts are located in `package.json` and can be run using `npm run <script>`.
@@ -30,9 +36,9 @@ These scripts are located in `package.json` and can be run using `npm run <scrip
 ### Running
 
 - `dev`: Starts Next.js in development mode.
-- `build`: Builds the application for production usage.
-- `start`: Starts a Next.js production server.
+- `build`: Builds the application for production usage and outputs the generated static site to `out/`.
 - `start:static`: Serves the built static files from `out/`.
+- `start`: Starts a Next.js production server. (We don't use this.)
 
 ### Linting & Formatting
 
