@@ -1,14 +1,14 @@
 # ttg-client
 
-## Development
+[![CI](https://github.com/tabletop-generator/client/actions/workflows/ci.yml/badge.svg)](https://github.com/tabletop-generator/client/actions/workflows/ci.yml)
 
-### Prerequisites
+## Prerequisites
 
 - [Node.js v20.x 'Iron' (LTS)](https://nodejs.org/en)
 - [Git](https://git-scm.com/)
 - [Visual Studio Code](https://code.visualstudio.com/)
 
-### Setup
+## Setup
 
 - `git clone`: Clone the project to your workspace
 
@@ -20,7 +20,7 @@
   - [ESLint](https://marketplace.visualstudio.com/items?itemName=dbaeumer.vscode-eslint)
   - [Prettier](https://marketplace.visualstudio.com/items?itemName=esbenp.prettier-vscode)
 
-### Scripts
+## Scripts
 
 These scripts are located in `package.json` and can be run using `npm run <script>`.
 
@@ -32,7 +32,7 @@ These scripts are located in `package.json` and can be run using `npm run <scrip
 - `prettier`: Runs `prettier --write .` to format all files in the project directory.
 - `prepare`: Not intended for manual use. Used to run the pre-commit hook which formats and lints code before every commit.
 
-### Workflow
+## Workflow
 
 Please follow the [GitHub flow](https://docs.github.com/en/get-started/using-github/github-flow) for contributions:
 
@@ -115,7 +115,7 @@ Please follow the [GitHub flow](https://docs.github.com/en/get-started/using-git
    Fixes #[issue number]
    ```
 
-### Documentation
+## Documentation
 
 - **Language:** [TypeScript](https://www.typescriptlang.org/docs/)
 - **Framework:** [Next.js](https://nextjs.org/docs)
