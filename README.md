@@ -11,7 +11,7 @@
 
 ## Setup
 
-- `git clone`: Clone the project to your workspace
+- `git clone <url>`: Clone the project to your workspace
 
 - `nvm install`: Install and use the correct version of node for the project
 
