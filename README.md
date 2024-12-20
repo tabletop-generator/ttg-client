@@ -4,6 +4,7 @@
 
 ## Prerequisites
 
+- [NVM](https://github.com/nvm-sh/nvm)
 - [Node.js v20.x 'Iron' (LTS)](https://nodejs.org/en)
 - [Git](https://git-scm.com/)
 - [Visual Studio Code](https://code.visualstudio.com/)
@@ -11,6 +12,8 @@
 ## Setup
 
 - `git clone`: Clone the project to your workspace
+
+- `nvm install`: Install and use the correct version of node for the project
 
 - `npm i`: Install required packages using npm
 
@@ -117,7 +120,7 @@ Please follow the [GitHub flow](https://docs.github.com/en/get-started/using-git
 
 ## Documentation
 
-- **Language:** [TypeScript](https://www.typescriptlang.org/docs/)
+- **Language:** [JavaScript](https://developer.mozilla.org/en-US/docs/Web/JavaScript)
 - **Framework:** [Next.js](https://nextjs.org/docs)
 - **Styling:** [TailwindCSS](https://tailwindcss.com/docs/)
 - **Runtime:** [Node.js](https://nodejs.org/docs/latest-v20.x/api/)
