@@ -1,6 +1,6 @@
 name: Task
 description: A specific piece of work
-type: 'task'
+type: "task"
 projects: ["tabletop-generator/1"]
 body:
   - type: textarea
