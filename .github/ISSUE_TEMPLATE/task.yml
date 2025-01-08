@@ -1,6 +1,5 @@
 name: Task
 description: A specific piece of work
-title: ""
 type: 'task'
 projects: ["tabletop-generator/1"]
 body:
