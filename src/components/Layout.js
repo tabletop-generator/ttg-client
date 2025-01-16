@@ -17,8 +17,8 @@ const user = {
     "https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?ixlib=rb-1.2.1&ixid=eyJhcHBfaWQiOjEyMDd9&auto=format&fit=facearea&facepad=2&w=256&h=256&q=80",
 };
 const navigation = [
-  { name: "Create", href: "#", current: true },
-  { name: "Discover", href: "#", current: false },
+  { name: "Discover", href: "#", current: true },
+  { name: "Create", href: "#", current: false },
   { name: "Profile", href: "#", current: false },
 ];
 const userNavigation = [
@@ -34,7 +34,7 @@ export default function Layout({ children }) {
   return (
     <>
       <div className="min-h-full">
-        <Disclosure as="nav" className="bg-gray-800">
+        <Disclosure as="nav" className="bg-gray-800 z-10">
           <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
             <div className="flex h-16 items-center justify-between">
               <div className="flex items-center">
@@ -182,14 +182,9 @@ export default function Layout({ children }) {
           </DisclosurePanel>
         </Disclosure>
 
-        {/* <header className="bg-white shadow">
-          <div className="mx-auto max-w-7xl px-4 py-6 sm:px-6 lg:px-8">
-            <h1 className="text-3xl font-bold tracking-tight text-gray-900">
-              Dashboard
-            </h1>
-          </div>
-        </header> */}
-        <main>
+        {/* main content */}
+        <main className="relative">
+          {/* relative to avoid overlapping nav*/}
           <div className="mx-auto max-w-7xl px-4 py-6 sm:px-6 lg:px-8">
             {children}
           </div>
