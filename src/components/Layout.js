@@ -33,7 +33,7 @@ function classNames(...classes) {
 export default function Layout({ children }) {
   return (
     <>
-      <div className="min-h-full">
+      <div className="min-h-full" style={{ backgroundColor: "black" }}>
         <Disclosure as="nav" className="bg-gray-800 z-10">
           <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
             <div className="flex h-16 items-center justify-between">
