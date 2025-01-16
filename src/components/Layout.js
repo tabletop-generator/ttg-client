@@ -30,7 +30,7 @@ function classNames(...classes) {
   return classes.filter(Boolean).join(" ");
 }
 
-export default function ApplicationShell({ children }) {
+export default function Layout({ children }) {
   return (
     <>
       <div className="min-h-full">

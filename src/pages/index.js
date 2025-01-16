@@ -1,9 +1,11 @@
-import ApplicationShell from "../components/ApplicationShell";
+import Layout from "../components/Layout";
+import GradientOverlay from "../components/GradientTransitionLarge";
 
 export default function Home() {
   return (
-    <ApplicationShell>
+    <Layout>
       <p>Holy balls I think it&apos;s working</p>
-    </ApplicationShell>
+      <GradientOverlay breakpoint1={`50`} breakpoint2={`70`} />
+    </Layout>
   );
 }
