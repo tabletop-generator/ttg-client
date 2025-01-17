@@ -8,19 +8,16 @@ import {
   MenuItems,
 } from "@headlessui/react";
 import { Bars3Icon, BellIcon, XMarkIcon } from "@heroicons/react/24/outline";
+import { useState } from "react";
 import { Children } from "react";
 
 const user = {
+  isLoggedIn: false, // change to false for testing
   name: "Example Man",
   email: "man@example.com",
   imageUrl:
     "https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?ixlib=rb-1.2.1&ixid=eyJhcHBfaWQiOjEyMDd9&auto=format&fit=facearea&facepad=2&w=256&h=256&q=80",
 };
-const navigation = [
-  { name: "Discover", href: "#", current: true },
-  { name: "Create", href: "#", current: false },
-  { name: "Profile", href: "#", current: false },
-];
 const userNavigation = [
   { name: "Personal Collections", href: "#" },
   { name: "Sign out", href: "#" },
@@ -31,6 +28,20 @@ function classNames(...classes) {
 }
 
 export default function Layout({ children }) {
+  // State or logic to determine user login status
+  const [isLoggedIn, setIsLoggedIn] = useState(user.isLoggedIn);
+
+  // Build the navigation dynamically based on login state
+  const navigation = [
+    { name: "Discover", href: "#", current: true },
+    { name: "Create", href: "#", current: false },
+    {
+      name: isLoggedIn ? "Profile" : "Log In / Sign Up",
+      href: isLoggedIn ? "/pages/profile/index.html" : "/login",
+      current: false,
+    },
+  ];
+
   return (
     <>
       <div className="min-h-full" style={{ backgroundColor: "black" }}>
