@@ -5,7 +5,7 @@ import SearchBar from "../components/SearchBar";
 
 export default function Home() {
   return (
-    <Layout>
+    <>
       {/* Add a container for all elements */}
       <div className="flex flex-col items-center space-y-8 p-6">
         <img src="/logo_hero.png" alt="TTG logo"></img>
@@ -15,6 +15,6 @@ export default function Home() {
         <GradientOverlay breakpoint1={`50`} breakpoint2={`70`} />
         <PinterestGrid />
       </div>
-    </Layout>
+    </>
   );
 }
