@@ -7,7 +7,7 @@ const cognitoAuthConfig = {
   client_id: process.env.NEXT_PUBLIC_AWS_COGNITO_CLIENT_ID,
   redirect_uri: process.env.NEXT_PUBLIC_OAUTH_SIGN_IN_REDIRECT_URL,
   response_type: "code",
-  scope: "phone openid email",
+  scope: "openid email",
   // no revoke of "access token" (https://github.com/authts/oidc-client-ts/issues/262)
   revokeTokenTypes: ["refresh_token"],
   // no silent renew via "prompt=none" (https://github.com/authts/oidc-client-ts/issues/366)

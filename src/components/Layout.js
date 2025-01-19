@@ -22,8 +22,8 @@ export default function Layout({ children }) {
     {
       name: isLoggedIn ? "Profile" : "Log In / Sign Up",
       href: isLoggedIn
-        ? "#"
-        : process.env.NEXT_PUBLIC_OAUTH_SIGN_IN_REDIRECT_URL,
+        ? "profile/"
+        : process.env.NEXT_PUBLIC_OAUTH_SIGN_IN_REDIRECT_URL, // URL redirect for sign in
       current: false,
       onClick: isLoggedIn
         ? null
