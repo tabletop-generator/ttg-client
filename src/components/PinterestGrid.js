@@ -15,7 +15,7 @@ export default function PinterestGrid() {
     const newImages = Array(10) // Load 10 images at a time
       .fill(null)
       .map((_, index) => ({
-        id: images.length + index + 1,
+        id: `${images.length + index + 1}-${Date.now()}`, // Placeholder unique ID until we plug in our backend
         src: `/placeholder/p0${((images.length + index) % 4) + 1}.png`,
       }));
     setImages((prevImages) => [...prevImages, ...newImages]); //spread operator is my best friend fr

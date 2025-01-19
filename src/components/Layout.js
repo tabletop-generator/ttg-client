@@ -1,61 +1,46 @@
 // Layout.js
-
-// This file contains our navbar. It's used as a wrapper for our entire app in _app.js
-
 import {
   Disclosure,
-  DisclosureButton,
   Menu,
   MenuButton,
   MenuItem,
   MenuItems,
 } from "@headlessui/react";
-import { Bars3Icon, BellIcon, XMarkIcon } from "@heroicons/react/24/outline";
-import { useEffect, useState } from "react";
-import { Auth } from "aws-amplify";
+import { Bars3Icon, BellIcon } from "@heroicons/react/24/outline";
+import { useAuth } from "../AuthContext";
 
 function classNames(...classes) {
   return classes.filter(Boolean).join(" ");
 }
 
 export default function Layout({ children }) {
-  const [user, setUser] = useState(null);
-  const [isLoggedIn, setIsLoggedIn] = useState(false);
+  const { user, isLoggedIn, signOut, signIn } = useAuth();
 
-  useEffect(() => {
-    const fetchUser = async () => {
-      try {
-        const currentUser = await Auth.currentAuthenticatedUser();
-        setUser(currentUser.attributes); // Attributes include email, name, etc.
-        setIsLoggedIn(true);
-      } catch (error) {
-        console.log("No user logged in");
-        setIsLoggedIn(false);
-      }
-    };
-
-    fetchUser();
-  }, []);
-
-  // Dynamic navigation links
   const navigation = [
     { name: "Discover", href: "#", current: true },
     ...(isLoggedIn ? [{ name: "Create", href: "#", current: false }] : []),
     {
       name: isLoggedIn ? "Profile" : "Log In / Sign Up",
-      href: isLoggedIn ? "/profile" : "/login",
+      href: isLoggedIn
+        ? "#"
+        : process.env.NEXT_PUBLIC_OAUTH_SIGN_IN_REDIRECT_URL,
       current: false,
+      onClick: isLoggedIn
+        ? null
+        : (e) => {
+            e.preventDefault(); // Prevent default navigation
+            signIn(); // Redirect to Cognito Hosted UI
+          },
     },
   ];
 
-  // User navigation for logged-in users
   const userNavigation = isLoggedIn
     ? [
         { name: "Personal Collections", href: "#" },
         {
           name: "Sign out",
           href: "#",
-          onClick: async () => await Auth.signOut(),
+          onClick: signOut,
         },
       ]
     : [];
@@ -107,7 +92,6 @@ export default function Layout({ children }) {
                   <Menu as="div" className="relative ml-3">
                     <div>
                       <MenuButton className="relative flex max-w-xs items-center rounded-full bg-gray-800 text-sm focus:outline-none focus:ring-2 focus:ring-white focus:ring-offset-2 focus:ring-offset-gray-800">
-                        <span className="absolute -inset-1.5" />
                         <span className="sr-only">Open user menu</span>
                         <img
                           alt=""

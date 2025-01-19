@@ -1,16 +1,15 @@
-import Layout from "../components/Layout";
-import { signIn, getUser } from "../auth";
+// src/pages/_app.js
+
+import { AuthProvider } from "../AuthContext"; // lets all components access authorization context
+import Layout from "../components/Layout"; // navbar wrapper
 import "@/styles/tailwind.css";
-
-import { Amplify } from "aws-amplify";
-import { amplifyConfig } from "../../amplify.config";
-
-Amplify.configure(amplifyConfig);
 
 export default function App({ Component, pageProps }) {
   return (
-    <Layout>
-      <Component {...pageProps} />
-    </Layout>
+    <AuthProvider>
+      <Layout>
+        <Component {...pageProps} />
+      </Layout>
+    </AuthProvider>
   );
 }
