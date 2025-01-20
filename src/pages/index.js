@@ -1,4 +1,3 @@
-import Layout from "../components/Layout";
 import GradientOverlay from "../components/GradientTransitionLarge";
 import PinterestGrid from "../components/PinterestGrid";
 import SearchBar from "../components/SearchBar";

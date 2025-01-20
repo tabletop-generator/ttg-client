@@ -1,4 +1,4 @@
-// Layout.js
+import { useEffect, useState } from "react";
 import {
   Disclosure,
   Menu,
@@ -7,14 +7,42 @@ import {
   MenuItems,
 } from "@headlessui/react";
 import { Bars3Icon, BellIcon } from "@heroicons/react/24/outline";
-import { useAuth } from "../AuthContext";
+import { getUser, signIn, signOut } from "../auth";
+import logger from "../logger";
 
 function classNames(...classes) {
   return classes.filter(Boolean).join(" ");
 }
 
 export default function Layout({ children }) {
-  const { user, isLoggedIn, signOut, signIn } = useAuth();
+  const [isLoggedIn, setIsLoggedIn] = useState(false);
+
+  useEffect(() => {
+    async function checkAuth() {
+      try {
+        logger.info("Checking authentication status...");
+        const user = await getUser();
+        logger.debug("Authentication check result:", { user });
+        setIsLoggedIn(!!user); // Update state based on authentication
+      } catch (error) {
+        logger.error("Error during authentication check:", error);
+        setIsLoggedIn(false); // Ensure we set logged-out state on error
+      }
+    }
+
+    checkAuth();
+
+    const logLocalStorage = () => {
+      logger.debug("localStorage contents:", {
+        accessToken: localStorage.getItem("access_token"),
+        idToken: localStorage.getItem("id_token"),
+      });
+    };
+
+    window.addEventListener("storage", logLocalStorage);
+
+    return () => window.removeEventListener("storage", logLocalStorage);
+  }, []);
 
   const navigation = [
     { name: "Discover", href: "#", current: true },
@@ -28,8 +56,8 @@ export default function Layout({ children }) {
       onClick: isLoggedIn
         ? null
         : (e) => {
-            e.preventDefault(); // Prevent default navigation
-            signIn(); // Redirect to Cognito Hosted UI
+            e.preventDefault();
+            signIn();
           },
     },
   ];
@@ -40,7 +68,11 @@ export default function Layout({ children }) {
         {
           name: "Sign out",
           href: "#",
-          onClick: signOut,
+          onClick: (e) => {
+            e.preventDefault(); // Prevent default link behavior
+            logger.info("Sign-out button clicked.");
+            signOut(); // Trigger sign-out
+          },
         },
       ]
     : [];
@@ -78,7 +110,6 @@ export default function Layout({ children }) {
             <div className="hidden md:block">
               {isLoggedIn && (
                 <div className="ml-4 flex items-center md:ml-6">
-                  {/* Bell Icon */}
                   <button
                     type="button"
                     className="relative rounded-full bg-gray-800 p-1 text-gray-400 hover:text-white focus:outline-none focus:ring-2 focus:ring-white focus:ring-offset-2 focus:ring-offset-gray-800"
@@ -88,7 +119,6 @@ export default function Layout({ children }) {
                     <BellIcon aria-hidden="true" className="size-6" />
                   </button>
 
-                  {/* Profile Dropdown */}
                   <Menu as="div" className="relative ml-3">
                     <div>
                       <MenuButton className="relative flex max-w-xs items-center rounded-full bg-gray-800 text-sm focus:outline-none focus:ring-2 focus:ring-white focus:ring-offset-2 focus:ring-offset-gray-800">
