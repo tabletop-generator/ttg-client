@@ -105,16 +105,20 @@ export async function signOut() {
 
     // Clear oidc-client-ts storage
     await userManager.clearStaleState();
-    await userManager.signoutRedirect(); // Redirect to Cognito logout if required
+
+    // Redirect to Cognito logout with proper redirect_uri
+    const logoutRedirectUri =
+      process.env.NEXT_PUBLIC_SIGN_OUT_REDIRECT_URL || "/";
+    logger.info(`Redirecting to Cognito logout: ${logoutRedirectUri}`);
+    await userManager.signoutRedirect({
+      post_logout_redirect_uri: logoutRedirectUri,
+    });
 
     logger.info("User signed out and tokens cleared.");
     logger.debug("localStorage after sign-out:", {
       accessToken: localStorage.getItem("access_token"),
       idToken: localStorage.getItem("id_token"),
     });
-
-    // Redirect to a public route
-    window.location.href = "/";
   } catch (error) {
     logger.error("Error during sign-out:", error);
     throw error;

@@ -32,6 +32,12 @@ export default function Layout({ children }) {
 
     checkAuth();
 
+    // Clean up query parameters after Cognito logout redirect
+    if (window.location.search.includes("state=")) {
+      logger.info("Cleaning up URL after Cognito logout redirect.");
+      window.history.replaceState({}, document.title, window.location.pathname);
+    }
+
     const logLocalStorage = () => {
       logger.debug("localStorage contents:", {
         accessToken: localStorage.getItem("access_token"),
@@ -39,14 +45,20 @@ export default function Layout({ children }) {
       });
     };
 
+    // Add event listener to track localStorage changes (useful for debugging)
     window.addEventListener("storage", logLocalStorage);
 
-    return () => window.removeEventListener("storage", logLocalStorage);
+    return () => {
+      // Cleanup event listener on unmount
+      window.removeEventListener("storage", logLocalStorage);
+    };
   }, []);
 
   const navigation = [
     { name: "Discover", href: "#", current: true },
-    ...(isLoggedIn ? [{ name: "Create", href: "#", current: false }] : []),
+    ...(isLoggedIn
+      ? [{ name: "Create", href: "/create", current: false }]
+      : []),
     {
       name: isLoggedIn ? "Profile" : "Log In / Sign Up",
       href: isLoggedIn
