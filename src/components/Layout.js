@@ -190,10 +190,7 @@ export default function Layout({ children }) {
                     </div>
                     <div className="ml-3">
                       <div className="text-base font-medium text-white">
-                        User Name
-                      </div>
-                      <div className="text-sm font-medium text-gray-400">
-                        user@example.com
+                        {auth?.user?.profile["cognito:username"]}
                       </div>
                     </div>
                   </div>
