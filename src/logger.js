@@ -1,4 +1,4 @@
-// David's pino logger
+// David's pino logger.
 
 // npm install --save pino pino-pretty pino-http
 

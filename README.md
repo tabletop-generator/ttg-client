@@ -38,7 +38,6 @@ These scripts are located in `package.json` and can be run using `npm run <scrip
 - `dev`: Starts Next.js in development mode.
 - `build`: Builds the application for production usage and outputs the generated static site to `out/`.
 - `start:static`: Serves the built static files from `out/`.
-- `start`: Starts a Next.js production server. (We don't use this.)
 
 ### Linting & Formatting
 
@@ -133,6 +132,7 @@ Please follow the [GitHub flow](https://docs.github.com/en/get-started/using-git
 - **Language:** [JavaScript](https://developer.mozilla.org/en-US/docs/Web/JavaScript)
 - **Framework:** [Next.js](https://nextjs.org/docs)
 - **Styling:** [TailwindCSS](https://tailwindcss.com/docs/)
+- **Authentication:** [react-oidc-context](https://github.com/authts/react-oidc-context?tab=readme-ov-file#documentation)
 - **Runtime:** [Node.js](https://nodejs.org/docs/latest-v20.x/api/)
 - **Package Manager:** [npm](https://docs.npmjs.com/)
 - **Version Control System:**
