@@ -1,79 +1,58 @@
-import { useEffect, useState } from "react";
 import {
   Disclosure,
+  DisclosureButton,
+  DisclosurePanel,
   Menu,
   MenuButton,
   MenuItem,
   MenuItems,
-  DisclosureButton,
-  DisclosurePanel,
 } from "@headlessui/react";
-import { Bars3Icon, XMarkIcon, BellIcon } from "@heroicons/react/24/outline";
-import { getUser, signIn, signOut } from "../auth";
-import logger from "../logger";
-
-function classNames(...classes) {
-  return classes.filter(Boolean).join(" ");
-}
+import { Bars3Icon, BellIcon, XMarkIcon } from "@heroicons/react/24/outline";
+import { useAuth } from "react-oidc-context";
 
 export default function Layout({ children }) {
-  const [isLoggedIn, setIsLoggedIn] = useState(false);
+  const auth = useAuth();
 
-  useEffect(() => {
-    async function checkAuth() {
-      try {
-        logger.info("Checking authentication status...");
-        const user = await getUser();
-        logger.debug("Authentication check result:", { user });
-        setIsLoggedIn(!!user);
-      } catch (error) {
-        logger.error("Error during authentication check:", error);
-        setIsLoggedIn(false);
-      }
-    }
+  const classNames = (...classes) => {
+    return classes.filter(Boolean).join(" ");
+  };
 
-    checkAuth();
-
-    if (window.location.search.includes("state=")) {
-      logger.info("Cleaning up URL after Cognito logout redirect.");
-      window.history.replaceState({}, document.title, window.location.pathname);
-    }
-
-    const logLocalStorage = () => {
-      logger.debug("localStorage contents:", {
-        accessToken: localStorage.getItem("access_token"),
-        idToken: localStorage.getItem("id_token"),
-      });
+  const handleSignOut = () => {
+    const signOutUrl = () => {
+      const clientId = process.env.NEXT_PUBLIC_AWS_COGNITO_CLIENT_ID;
+      const logoutUri = process.env.NEXT_PUBLIC_OAUTH_SIGN_OUT_REDIRECT_URL;
+      const cognitoDomain = process.env.NEXT_PUBLIC_COGNITO_DOMAIN;
+      return `${cognitoDomain}/logout?client_id=${clientId}&logout_uri=${encodeURIComponent(logoutUri)}`;
     };
 
-    window.addEventListener("storage", logLocalStorage);
+    // Remove user from the oidc context
+    auth.removeUser();
 
-    return () => {
-      window.removeEventListener("storage", logLocalStorage);
-    };
-  }, []);
+    // Redirect to the Cognito sign-out URL
+    window.location.href = signOutUrl();
+  };
 
   const navigation = [
     { name: "Discover", href: "/", current: true },
-    ...(isLoggedIn
+    ...(auth?.isAuthenticated
       ? [{ name: "Create", href: "/create", current: false }]
       : []),
     {
-      name: isLoggedIn ? "Profile" : "Log In / Sign Up",
-      href: isLoggedIn
+      name: auth?.isAuthenticated ? "Profile" : "Log In / Sign Up",
+      href: auth?.isAuthenticated
         ? "profile/"
         : process.env.NEXT_PUBLIC_OAUTH_SIGN_IN_REDIRECT_URL,
       current: false,
-      onClick: isLoggedIn
+      onClick: auth?.isAuthenticated
         ? null
         : (e) => {
             e.preventDefault();
-            signIn();
+            auth.signinRedirect();
           },
     },
   ];
 
-  const userNavigation = isLoggedIn
+  const userNavigation = auth?.isAuthenticated
     ? [
         { name: "Personal Collections", href: "#" },
         {
@@ -81,8 +60,7 @@ export default function Layout({ children }) {
           href: "#",
           onClick: (e) => {
             e.preventDefault();
-            logger.info("Sign-out button clicked.");
-            signOut();
+            handleSignOut();
           },
         },
       ]
@@ -121,7 +99,7 @@ export default function Layout({ children }) {
                   </div>
                 </div>
                 <div className="hidden md:block">
-                  {isLoggedIn && (
+                  {auth?.isAuthenticated && (
                     <div className="ml-4 flex items-center md:ml-6">
                       <button
                         type="button"
@@ -200,7 +178,7 @@ export default function Layout({ children }) {
                   </DisclosureButton>
                 ))}
               </div>
-              {isLoggedIn && (
+              {auth?.isAuthenticated && (
                 <div className="border-t border-gray-700 pb-3 pt-4">
                   <div className="flex items-center px-5">
                     <div className="shrink-0">
