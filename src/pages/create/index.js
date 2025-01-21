@@ -1,5 +1,6 @@
 import CharacterForm from "@/components/CharacterForm";
 import EnvironmentsForm from "@/components/LocationForm";
+import MapForm from "@/components/MapForm";
 import OptionCard from "@/components/OptionCard";
 import { useState } from "react";
 
@@ -49,6 +50,9 @@ export default function CreatePage() {
       ) : /* environments */
       selectedOption === "environments" ? (
         <EnvironmentsForm onBack={handleGoBack} />
+      ) : /* maps */
+      selectedOption === "maps" ? (
+        <MapForm onBack={handleGoBack} />
       ) : (
         <>
           <h1 className="text-3xl font-bold text-center mb-8">
