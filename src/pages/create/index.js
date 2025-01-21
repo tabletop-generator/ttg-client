@@ -1,6 +1,7 @@
-import React, { useState } from "react";
-import OptionCard from "@/components/OptionCard";
 import CharacterForm from "@/components/CharacterForm";
+import EnvironmentsForm from "@/components/LocationForm";
+import OptionCard from "@/components/OptionCard";
+import { useState } from "react";
 
 const options = [
   {
@@ -42,8 +43,12 @@ export default function CreatePage() {
 
   return (
     <div className="p-6">
+      {/* characters */}
       {selectedOption === "characters" ? (
         <CharacterForm onBack={handleGoBack} />
+      ) : /* environments */
+      selectedOption === "environments" ? (
+        <EnvironmentsForm onBack={handleGoBack} />
       ) : (
         <>
           <h1 className="text-3xl font-bold text-center mb-8">
