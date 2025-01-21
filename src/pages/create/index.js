@@ -2,6 +2,7 @@ import CharacterForm from "@/components/CharacterForm";
 import EnvironmentsForm from "@/components/LocationForm";
 import MapForm from "@/components/MapForm";
 import OptionCard from "@/components/OptionCard";
+import QuestForm from "@/components/QuestForm";
 import { useState } from "react";
 
 const options = [
@@ -53,6 +54,9 @@ export default function CreatePage() {
       ) : /* maps */
       selectedOption === "maps" ? (
         <MapForm onBack={handleGoBack} />
+      ) : /* quests */
+      selectedOption === "quests" ? (
+        <QuestForm onBack={handleGoBack} />
       ) : (
         <>
           <h1 className="text-3xl font-bold text-center mb-8">
