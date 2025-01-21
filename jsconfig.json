@@ -1,0 +1,8 @@
+{
+  "compilerOptions": {
+    "baseUrl": "src", // Makes "src" the root for module resolution
+    "paths": {
+      "@/*": ["*"] // Allows using "@/..." as a shorthand for "src/..."
+    }
+  }
+}
