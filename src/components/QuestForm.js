@@ -92,10 +92,10 @@ export default function QuestForm({ onBack }) {
     setFormData((prev) => ({ ...prev, [name]: value }));
   };
 
-  const handleTerrainChange = (selectedOptions) => {
+  const handleTypeChange = (selectedOptions) => {
     setFormData((prev) => ({
       ...prev,
-      terrain: selectedOptions
+      type: selectedOptions
         ? selectedOptions.map((option) => option.value)
         : [],
     }));
@@ -171,7 +171,7 @@ export default function QuestForm({ onBack }) {
               value={options.filter((option) =>
                 formData.type.includes(option.value),
               )}
-              onChange={handleTerrainChange}
+              onChange={handleTypeChange}
               styles={customStyles}
               placeholder="Select quest type(s)"
             />
