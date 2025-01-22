@@ -1,7 +1,9 @@
+import GeneratedAsset from "@/components/GeneratedAsset";
 import { useState } from "react";
 
 export default function CharacterForm({ onBack }) {
   const [formData, setFormData] = useState({
+    name: "",
     race: "",
     class: "",
     gender: "",
@@ -15,16 +17,48 @@ export default function CharacterForm({ onBack }) {
     pose: "",
   });
 
+  const [isSubmitted, setIsSubmitted] = useState(false); // Tracks if the form is submitted
+  const [generatedResult, setGeneratedResult] = useState(null); // Placeholder for API response
+  const [loading, setLoading] = useState(false); // Tracks loading state
+  const [error, setError] = useState(null); // Tracks errors
+
   const handleChange = (e) => {
     const { name, value } = e.target;
     setFormData((prev) => ({ ...prev, [name]: value }));
   };
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
-    console.log("Form submitted:", formData);
-    // Add API call or form submission logic here
+    setLoading(true); // Start loading
+    setError(null); // Clear any previous errors
+
+    try {
+      // Placeholder for API call
+      console.log("Form data submitted:", formData);
+
+      const response = {
+        // API call to generate will go here
+      };
+
+      // Store the response and navigate to GeneratedAsset
+      setGeneratedResult(response);
+      setIsSubmitted(true); // Navigate to GeneratedAsset
+    } catch (err) {
+      setError("An error occurred. Please try again."); // Handle errors
+    } finally {
+      setLoading(false); // Stop loading
+    }
   };
+
+  if (isSubmitted) {
+    // Navigate to GeneratedAsset with the form data and generated result
+    return (
+      <GeneratedAsset
+        onBack={() => setIsSubmitted(false)} // Allow going back to the form
+        data={{ id: "characters", ...formData, generated: generatedResult }}
+      />
+    );
+  }
 
   return (
     <form onSubmit={handleSubmit} className="space-y-8">
@@ -217,8 +251,9 @@ export default function CharacterForm({ onBack }) {
         <button
           type="submit"
           className="px-4 py-2 text-sm font-medium text-white bg-indigo-600 rounded-md hover:bg-indigo-500"
+          disabled={loading} // Disable button while loading
         >
-          Submit
+          {loading ? "Submitting..." : "Submit"}
         </button>
       </div>
     </form>
