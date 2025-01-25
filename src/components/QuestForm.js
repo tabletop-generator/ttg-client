@@ -1,9 +1,10 @@
+import GeneratedAsset from "@/components/GeneratedAsset";
 import { useState } from "react";
 import Select from "react-select";
 
 export default function QuestForm({ onBack }) {
   const [formData, setFormData] = useState({
-    title: "",
+    name: "", // Quest name
     type: [],
     objective: "",
     combatEncounters: "",
@@ -16,6 +17,11 @@ export default function QuestForm({ onBack }) {
     motivation: "",
     consequences: "",
   });
+
+  const [isSubmitted, setIsSubmitted] = useState(false);
+  const [generatedResult, setGeneratedResult] = useState(null); // Placeholder for API response
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState(null);
 
   // Options for the Type Multi-Select
   const options = [
@@ -81,13 +87,11 @@ export default function QuestForm({ onBack }) {
     }),
   };
 
-  // Handle change for regular inputs
   const handleChange = (e) => {
     const { name, value } = e.target;
     setFormData((prev) => ({ ...prev, [name]: value }));
   };
 
-  // Handle change for React-Select
   const handleTypeChange = (selectedOptions) => {
     setFormData((prev) => ({
       ...prev,
@@ -97,38 +101,62 @@ export default function QuestForm({ onBack }) {
     }));
   };
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
-    console.log("Form submitted:", formData);
+    setLoading(true);
+    setError(null);
+
+    try {
+      console.log("Form data submitted:", formData);
+
+      const response = {
+        // Simulated API response (replace with actual API call)
+      };
+
+      setGeneratedResult(response);
+      setIsSubmitted(true);
+    } catch (err) {
+      setError("An error occurred. Please try again.");
+    } finally {
+      setLoading(false);
+    }
   };
+
+  if (isSubmitted) {
+    return (
+      <GeneratedAsset
+        onBack={() => setIsSubmitted(false)}
+        data={{ id: "quests", ...formData, generated: generatedResult }}
+      />
+    );
+  }
 
   return (
     <form onSubmit={handleSubmit} className="space-y-8">
       <div className="space-y-6">
         <h2 className="text-lg font-semibold text-white">Create Quests</h2>
 
-        {/* First Row: Title and Type */}
+        {/* name and Type fields */}
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-4">
-          {/* Title */}
           <div>
             <label
-              htmlFor="title"
+              htmlFor="name"
               className="block text-sm font-medium text-white"
             >
-              Quest Title
+              Quest name
             </label>
             <input
               type="text"
-              id="title"
-              name="title"
-              value={formData.title}
+              id="name"
+              name="name"
+              value={formData.name}
               onChange={handleChange}
               className="block w-full mt-1 h-12 rounded-md bg-gray-800 border-gray-600 text-white placeholder:text-gray-400 focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm px-3"
-              placeholder="Enter the title of the quest"
+              placeholder="Enter the name of the quest"
             />
           </div>
 
-          {/* Type (React-Select Multi-Select) */}
+          {/* Type Multi-Select */}
           <div>
             <label
               htmlFor="type"
@@ -149,9 +177,9 @@ export default function QuestForm({ onBack }) {
             />
           </div>
         </div>
-        {/* Second Row: Objective and Combat Encounters */}
+
+        {/* Objective and Combat Encounters */}
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-4">
-          {/* Objective */}
           <div>
             <label
               htmlFor="objective"
@@ -170,7 +198,6 @@ export default function QuestForm({ onBack }) {
             />
           </div>
 
-          {/* Combat Encounters */}
           <div>
             <label
               htmlFor="combatEncounters"
@@ -196,28 +223,9 @@ export default function QuestForm({ onBack }) {
             </select>
           </div>
         </div>
-        {/* Third Row: Location and Combat QuestGiver */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-4">
-          {/* Location */}
-          <div>
-            <label
-              htmlFor="location"
-              className="block text-sm font-medium text-white"
-            >
-              Location
-            </label>
-            <input
-              type="text"
-              id="location"
-              name="location"
-              value={formData.location}
-              onChange={handleChange}
-              className="block w-full mt-1 h-12 rounded-md bg-gray-800 border-gray-600 text-white placeholder:text-gray-400 focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm px-3"
-              placeholder="Enter the location of the quest"
-            />
-          </div>
 
-          {/* Quest Giver */}
+        {/* Quest Giver, Rewards, Tone */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-4">
           <div>
             <label
               htmlFor="questGiver"
@@ -232,14 +240,10 @@ export default function QuestForm({ onBack }) {
               value={formData.questGiver}
               onChange={handleChange}
               className="block w-full mt-1 h-12 rounded-md bg-gray-800 border-gray-600 text-white placeholder:text-gray-400 focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm px-3"
-              placeholder="Enter the Quest Giver of the quest"
+              placeholder="Enter the quest giver"
             />
           </div>
-        </div>
 
-        {/* Forth Row: Rewards and Tone */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-4">
-          {/* Rewards */}
           <div>
             <label
               htmlFor="rewards"
@@ -257,35 +261,10 @@ export default function QuestForm({ onBack }) {
               placeholder="Enter the rewards for the quest"
             />
           </div>
-
-          {/* Tone */}
-          <div>
-            <label
-              htmlFor="tone"
-              className="block text-sm font-medium text-white"
-            >
-              Tone
-            </label>
-            <select
-              id="tone"
-              name="tone"
-              value={formData.tone}
-              onChange={handleChange}
-              className="block w-full mt-1 h-12 rounded-md bg-gray-800 border-gray-600 text-white placeholder:text-gray-400 focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm px-3"
-            >
-              <option value="">Select the Tone</option>
-              {["PlaceHolder1", "PlaceHolder2", "PlaceHolder3"].map((tone) => (
-                <option key={tone} value={tone}>
-                  {tone}
-                </option>
-              ))}
-            </select>
-          </div>
         </div>
 
-        {/* Fifth Row: Duration and Obstacles */}
+        {/* Duration and Obstacles */}
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-4">
-          {/* Duration */}
           <div>
             <label
               htmlFor="duration"
@@ -301,15 +280,16 @@ export default function QuestForm({ onBack }) {
               className="block w-full mt-1 h-12 rounded-md bg-gray-800 border-gray-600 text-white placeholder:text-gray-400 focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm px-3"
             >
               <option value="">Select the duration</option>
-              {["PlaceHolder1", "PlaceHolder2", "PlaceHolder3"].map((tone) => (
-                <option key={tone} value={tone}>
-                  {tone}
-                </option>
-              ))}
+              {["PlaceHolder1", "PlaceHolder2", "PlaceHolder3"].map(
+                (duration) => (
+                  <option key={duration} value={duration}>
+                    {duration}
+                  </option>
+                ),
+              )}
             </select>
           </div>
 
-          {/* Obstacles */}
           <div>
             <label
               htmlFor="obstacles"
@@ -329,7 +309,6 @@ export default function QuestForm({ onBack }) {
           </div>
         </div>
 
-        {/* antagonistAndEnemies, motivation, consequences */}
         {/* Antagonist and Enemies */}
         <div>
           <label
@@ -349,6 +328,7 @@ export default function QuestForm({ onBack }) {
           />
         </div>
 
+        {/* Motivation and Consequences */}
         {["motivation", "consequences"].map((field) => (
           <div key={field}>
             <label

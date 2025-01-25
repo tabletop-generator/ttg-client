@@ -1,5 +1,5 @@
 import CharacterForm from "@/components/CharacterForm";
-import EnvironmentsForm from "@/components/LocationForm";
+import LocationsForm from "@/components/LocationForm";
 import MapForm from "@/components/MapForm";
 import OptionCard from "@/components/OptionCard";
 import QuestForm from "@/components/QuestForm";
@@ -13,9 +13,9 @@ const options = [
     image: "/placeholder/card_character.png",
   },
   {
-    id: "environments",
-    title: "Environments",
-    description: "Create breathtaking environments for your story.",
+    id: "locations",
+    title: "Locations",
+    description: "Create breathtaking locations for your story.",
     image: "/placeholder/card_environment.png",
   },
   {
@@ -48,9 +48,9 @@ export default function CreatePage() {
       {/* characters */}
       {selectedOption === "characters" ? (
         <CharacterForm onBack={handleGoBack} />
-      ) : /* environments */
-      selectedOption === "environments" ? (
-        <EnvironmentsForm onBack={handleGoBack} />
+      ) : /* locations */
+      selectedOption === "locations" ? (
+        <LocationsForm onBack={handleGoBack} />
       ) : /* maps */
       selectedOption === "maps" ? (
         <MapForm onBack={handleGoBack} />
