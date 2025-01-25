@@ -1,16 +1,24 @@
+import GeneratedAsset from "@/components/GeneratedAsset";
 import { useState } from "react";
 import Select from "react-select";
 
 export default function MapForm({ onBack }) {
+  // Initialize form state with all fields, including a unique ID
   const [formData, setFormData] = useState({
+    name: "",
     type: "",
     class: "",
     style: "",
     scale: "",
-    terrain: [],
+    terrain: [], // Multi-select for terrain options
     orientation: "",
     poi: "",
   });
+
+  const [isSubmitted, setIsSubmitted] = useState(false);
+  const [generatedResult, setGeneratedResult] = useState(null); // Placeholder for API response
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState(null);
 
   // Options for the Terrain Multi-Select
   const options = [
@@ -76,13 +84,11 @@ export default function MapForm({ onBack }) {
     }),
   };
 
-  // Handle change for regular inputs
   const handleChange = (e) => {
     const { name, value } = e.target;
     setFormData((prev) => ({ ...prev, [name]: value }));
   };
 
-  // Handle change for React-Select
   const handleTerrainChange = (selectedOptions) => {
     setFormData((prev) => ({
       ...prev,
@@ -92,19 +98,62 @@ export default function MapForm({ onBack }) {
     }));
   };
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
-    console.log("Form submitted:", formData);
-    // Add API call or form submission logic here
+    setLoading(true);
+    setError(null);
+
+    try {
+      console.log("Form data submitted:", formData);
+
+      const response = {
+        // Simulated API response (replace with actual API call)
+      };
+
+      setGeneratedResult(response);
+      setIsSubmitted(true);
+    } catch (err) {
+      setError("An error occurred. Please try again.");
+    } finally {
+      setLoading(false);
+    }
   };
+
+  if (isSubmitted) {
+    return (
+      <GeneratedAsset
+        onBack={() => setIsSubmitted(false)}
+        data={{ id: "maps", ...formData, generated: generatedResult }}
+      />
+    );
+  }
 
   return (
     <form onSubmit={handleSubmit} className="space-y-8">
       <div className="space-y-6">
         <h2 className="text-lg font-semibold text-white">Create Map</h2>
+        {error && <p className="text-red-500 text-center">{error}</p>}
 
-        {/* Dropdowns */}
         <div className="grid grid-cols-1 gap-y-6 sm:grid-cols-2 gap-x-4">
+          {/* Map Name */}
+          <div>
+            <label
+              htmlFor="name"
+              className="block text-sm font-medium text-white"
+            >
+              Map Name
+            </label>
+            <input
+              type="text"
+              id="name"
+              name="name"
+              value={formData.name}
+              onChange={handleChange}
+              className="block w-full mt-1 h-12 rounded-md bg-gray-800 border-gray-600 text-white placeholder:text-gray-400 focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm px-3"
+              placeholder="Enter a name for the map"
+            />
+          </div>
+
           {/* Type */}
           <div>
             <label
@@ -118,10 +167,10 @@ export default function MapForm({ onBack }) {
               name="type"
               value={formData.type}
               onChange={handleChange}
-              className="block w-full mt-1 h-12 rounded-md bg-gray-800 border-gray-600 text-white placeholder:text-gray-400 placeholder:pt-2 placeholder:pl-3 focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm px-3"
+              className="block w-full mt-1 h-12 rounded-md bg-gray-800 border-gray-600 text-white placeholder:text-gray-400 focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm px-3"
             >
               <option value="">Select a type</option>
-              {["PlaceHolder", "PlaceHolder", "PlaceHolder"].map((type) => (
+              {["PlaceHolder1", "PlaceHolder2", "PlaceHolder3"].map((type) => (
                 <option key={type} value={type}>
                   {type}
                 </option>
@@ -142,10 +191,10 @@ export default function MapForm({ onBack }) {
               name="style"
               value={formData.style}
               onChange={handleChange}
-              className="block w-full mt-1 h-12 rounded-md bg-gray-800 border-gray-600 text-white placeholder:text-gray-400 placeholder:pt-2 placeholder:pl-3 focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm px-3"
+              className="block w-full mt-1 h-12 rounded-md bg-gray-800 border-gray-600 text-white placeholder:text-gray-400 focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm px-3"
             >
               <option value="">Select a style</option>
-              {["PlaceHolder", "PlaceHolder", "PlaceHolder"].map((style) => (
+              {["PlaceHolder1", "PlaceHolder2", "PlaceHolder3"].map((style) => (
                 <option key={style} value={style}>
                   {style}
                 </option>
@@ -166,10 +215,10 @@ export default function MapForm({ onBack }) {
               name="scale"
               value={formData.scale}
               onChange={handleChange}
-              className="block w-full mt-1 h-12 rounded-md bg-gray-800 border-gray-600 text-white placeholder:text-gray-400 placeholder:pt-2 placeholder:pl-3 focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm px-3"
+              className="block w-full mt-1 h-12 rounded-md bg-gray-800 border-gray-600 text-white placeholder:text-gray-400 focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm px-3"
             >
               <option value="">Select a scale</option>
-              {["PlaceHolder", "PlaceHolder", "PlaceHolder"].map((scale) => (
+              {["PlaceHolder1", "PlaceHolder2", "PlaceHolder3"].map((scale) => (
                 <option key={scale} value={scale}>
                   {scale}
                 </option>
@@ -177,7 +226,7 @@ export default function MapForm({ onBack }) {
             </select>
           </div>
 
-          {/* Terrain (React-Select Multi-Select) */}
+          {/* Terrain (Multi-Select) */}
           <div>
             <label
               htmlFor="terrain"
@@ -197,22 +246,24 @@ export default function MapForm({ onBack }) {
               placeholder="Select terrains"
             />
           </div>
-        </div>
-
-        {/* POI */}
-        <div>
-          <label htmlFor="poi" className="block text-sm font-medium text-white">
-            POI
-          </label>
-          <textarea
-            id="poi"
-            name="poi"
-            rows={3}
-            value={formData.poi}
-            onChange={handleChange}
-            className="block w-full mt-1 rounded-md bg-gray-800 border-gray-600 text-white placeholder:text-gray-400 focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
-            placeholder="Enter POI here"
-          />
+          {/* POI */}
+          <div>
+            <label
+              htmlFor="poi"
+              className="block text-sm font-medium text-white"
+            >
+              POI
+            </label>
+            <textarea
+              id="poi"
+              name="poi"
+              rows={3}
+              value={formData.poi}
+              onChange={handleChange}
+              className="block w-full mt-1 rounded-md bg-gray-800 border-gray-600 text-white placeholder:text-gray-400 focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
+              placeholder="Enter POI here"
+            />
+          </div>
         </div>
       </div>
 
@@ -228,8 +279,9 @@ export default function MapForm({ onBack }) {
         <button
           type="submit"
           className="px-4 py-2 text-sm font-medium text-white bg-indigo-600 rounded-md hover:bg-indigo-500"
+          disabled={loading}
         >
-          Submit
+          {loading ? "Submitting..." : "Submit"}
         </button>
       </div>
     </form>
