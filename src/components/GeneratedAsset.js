@@ -58,24 +58,24 @@ export default function GeneratedAsset({ onBack, data }) {
         <h4 className="text-2xl font-bold text-white mt-4">
           Your {formattedId} Name
         </h4>
-        <div className="flex justify-center items-center mt-4">
+        <div className="flex flex-col items-center justify-center mt-4 space-y-2 sm:space-y-0 sm:flex-row sm:space-x-4">
           {isEditing ? (
             <>
               <input
                 type="text"
                 value={tempName}
                 onChange={(e) => setTempName(e.target.value)}
-                className="bg-gray-700 text-white rounded-md px-4 py-2 mr-4"
+                className="w-full sm:w-auto bg-gray-700 text-white rounded-md px-4 py-2 text-center"
               />
               <button
                 onClick={saveName}
-                className="px-4 py-2 bg-green-600 text-white rounded-md hover:bg-green-500"
+                className="px-4 py-2 bg-green-600 text-white rounded-md hover:bg-green-500 w-full sm:w-auto"
               >
                 Save
               </button>
               <button
                 onClick={cancelEditing}
-                className="px-4 py-2 bg-red-600 text-white rounded-md hover:bg-red-500 ml-2"
+                className="px-4 py-2 bg-red-600 text-white rounded-md hover:bg-red-500 w-full sm:w-auto"
               >
                 Cancel
               </button>
@@ -86,11 +86,11 @@ export default function GeneratedAsset({ onBack, data }) {
                 type="text"
                 value={name}
                 readOnly
-                className="bg-gray-700 text-white rounded-md px-4 py-2 mr-4"
+                className="w-full sm:w-auto bg-gray-700 text-white rounded-md px-4 py-2 text-center"
               />
               <button
                 onClick={startEditing}
-                className="px-4 py-2 bg-indigo-600 text-white rounded-md hover:bg-indigo-500"
+                className="px-4 py-2 bg-indigo-600 text-white rounded-md hover:bg-indigo-500 w-full sm:w-auto"
               >
                 Change
               </button>
