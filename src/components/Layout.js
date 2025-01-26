@@ -8,11 +8,12 @@ import {
   MenuItems,
 } from "@headlessui/react";
 import { Bars3Icon, BellIcon, XMarkIcon } from "@heroicons/react/24/outline";
+import { useRouter } from "next/router";
 import { useAuth } from "react-oidc-context";
 
 export default function Layout({ children }) {
   const auth = useAuth();
-
+  const router = useRouter();
   const classNames = (...classes) => {
     return classes.filter(Boolean).join(" ");
   };
@@ -40,7 +41,7 @@ export default function Layout({ children }) {
     {
       name: auth?.isAuthenticated ? "Profile" : "Log In / Sign Up",
       href: auth?.isAuthenticated
-        ? "profile/"
+        ? "/profile"
         : process.env.NEXT_PUBLIC_OAUTH_SIGN_IN_REDIRECT_URL,
       current: false,
       onClick: auth?.isAuthenticated
@@ -54,7 +55,14 @@ export default function Layout({ children }) {
 
   const userNavigation = auth?.isAuthenticated
     ? [
-        { name: "Personal Collections", href: "#" },
+        {
+          name: "Personal Collections",
+          href: "/profile?tab=collections", //go to profile to personal collections
+          onClick: (e) => {
+            e.preventDefault();
+            router.push("/profile?tab=collections"); // Programmatically navigate
+          },
+        },
         {
           name: "Sign out",
           href: "#",
