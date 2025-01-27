@@ -9,6 +9,7 @@ import {
 } from "@headlessui/react";
 import { Bars3Icon, BellIcon, XMarkIcon } from "@heroicons/react/24/outline";
 import { useRouter } from "next/router";
+import { Log } from "oidc-client-ts";
 import { useAuth } from "react-oidc-context";
 
 export default function Layout({ children }) {
@@ -17,6 +18,13 @@ export default function Layout({ children }) {
   const classNames = (...classes) => {
     return classes.filter(Boolean).join(" ");
   };
+
+  // https://authts.github.io/oidc-client-ts/index.html#md:logging
+  if (process.env.NODE_ENV !== "development") {
+    Log.setLevel(Log.NONE);
+  } else {
+    Log.setLogger(console);
+  }
 
   const handleSignOut = () => {
     const signOutUrl = () => {
