@@ -1,6 +1,6 @@
 // src/pages/_app.js
 import cognitoAuthConfig from "@/cognitoAuthConfig";
-import Layout from "@/components/Layout"; // navbar wrapper
+import Layout from "@/components/Layout.jsx"; // navbar wrapper
 import "@/styles/tailwind.css";
 import { AuthProvider } from "react-oidc-context";
 
