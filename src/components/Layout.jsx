@@ -62,14 +62,13 @@ export default function Layout({ children }) {
       ? [{ name: "Create", href: "/create", current: false }]
       : []),
     {
-      name: () =>
-        auth?.error
-          ? "An error occurred. Please refresh the page."
-          : auth?.isLoading
-            ? "Loading..."
-            : auth?.isAuthenticated
-              ? "Profile"
-              : "Log In / Sign Up",
+      name: auth?.error
+        ? "An error occurred. Please refresh the page."
+        : auth?.isLoading
+          ? "Loading..."
+          : auth?.isAuthenticated
+            ? "Profile"
+            : "Log In / Sign Up",
       href: auth?.isAuthenticated
         ? "/profile"
         : process.env.NEXT_PUBLIC_OAUTH_SIGN_IN_REDIRECT_URL,
