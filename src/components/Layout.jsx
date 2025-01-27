@@ -9,6 +9,8 @@ import {
 } from "@headlessui/react";
 import { Bars3Icon, BellIcon, XMarkIcon } from "@heroicons/react/24/outline";
 import { useRouter } from "next/router";
+import { Log } from "oidc-client-ts";
+import { useEffect } from "react";
 import { useAuth } from "react-oidc-context";
 
 export default function Layout({ children }) {
@@ -17,6 +19,13 @@ export default function Layout({ children }) {
   const classNames = (...classes) => {
     return classes.filter(Boolean).join(" ");
   };
+
+  // https://authts.github.io/oidc-client-ts/index.html#md:logging
+  if (process.env.NODE_ENV !== "development") {
+    Log.setLevel(Log.NONE);
+  } else {
+    Log.setLogger(console);
+  }
 
   const handleSignOut = () => {
     const signOutUrl = () => {
@@ -33,13 +42,33 @@ export default function Layout({ children }) {
     window.location.href = signOutUrl();
   };
 
+  // See https://github.com/authts/react-oidc-context?tab=readme-ov-file#adding-event-listeners
+  useEffect(() => {
+    // the `return` is important - addAccessTokenExpiring() returns a cleanup function
+    return auth.events.addAccessTokenExpiring(() => {
+      if (
+        alert(
+          "You're about to be signed out due to inactivity. Press continue to stay signed in.",
+        )
+      ) {
+        auth.signinSilent();
+      }
+    });
+  }, [auth]);
+
   const navigation = [
     { name: "Discover", href: "/", current: true },
     ...(auth?.isAuthenticated
       ? [{ name: "Create", href: "/create", current: false }]
       : []),
     {
-      name: auth?.isAuthenticated ? "Profile" : "Log In / Sign Up",
+      name: auth?.error
+        ? "An error occurred. Please refresh the page."
+        : auth?.isLoading
+          ? "Loading..."
+          : auth?.isAuthenticated
+            ? "Profile"
+            : "Log In / Sign Up",
       href: auth?.isAuthenticated
         ? "/profile"
         : process.env.NEXT_PUBLIC_OAUTH_SIGN_IN_REDIRECT_URL,
