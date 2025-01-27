@@ -9,14 +9,43 @@ import {
 } from "@headlessui/react";
 import { Bars3Icon, BellIcon, XMarkIcon } from "@heroicons/react/24/outline";
 import { useRouter } from "next/router";
+import { useEffect, useState } from "react";
 import { useAuth } from "react-oidc-context";
 
 export default function Layout({ children }) {
   const auth = useAuth();
   const router = useRouter();
+
+  const [isReady, setIsReady] = useState(false); //State to handle loading
+
   const classNames = (...classes) => {
     return classes.filter(Boolean).join(" ");
   };
+
+  //our protected routes
+  const protectedRoutePrefixes = ["/create", "/profile"];
+
+  useEffect(() => {
+    if (!auth.isLoading) {
+      //checking to see if any routes protected
+      const isProtected = protectedRoutePrefixes.some((prefix) =>
+        router.pathname.startsWith(prefix),
+      );
+      if (isProtected && !auth.isAuthenticated) {
+        router.push(process.env.NEXT_PUBLIC_OAUTH_SIGN_IN_REDIRECT_URL);
+      } else {
+        setIsReady(true);
+      }
+    }
+  }, [auth.isAuthenticated, auth.isLoading, router.pathname]);
+
+  if (!isReady) {
+    return (
+      <div className="flex items-center justify-center min-h-screen bg-black">
+        <div className="animate-spin rounded-full h-12 w-12 border-t-4 border-b-4 border-white"></div>
+      </div>
+    );
+  }
 
   const handleSignOut = () => {
     const signOutUrl = () => {
