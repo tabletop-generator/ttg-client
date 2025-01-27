@@ -10,6 +10,7 @@ import {
 import { Bars3Icon, BellIcon, XMarkIcon } from "@heroicons/react/24/outline";
 import { useRouter } from "next/router";
 import { Log } from "oidc-client-ts";
+import { useEffect } from "react";
 import { useAuth } from "react-oidc-context";
 
 export default function Layout({ children }) {
@@ -47,7 +48,14 @@ export default function Layout({ children }) {
       ? [{ name: "Create", href: "/create", current: false }]
       : []),
     {
-      name: auth?.isAuthenticated ? "Profile" : "Log In / Sign Up",
+      name: () =>
+        auth?.error
+          ? "An error occurred. Please refresh the page."
+          : auth?.isLoading
+            ? "Loading..."
+            : auth?.isAuthenticated
+              ? "Profile"
+              : "Log In / Sign Up",
       href: auth?.isAuthenticated
         ? "/profile"
         : process.env.NEXT_PUBLIC_OAUTH_SIGN_IN_REDIRECT_URL,
