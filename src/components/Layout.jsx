@@ -42,6 +42,20 @@ export default function Layout({ children }) {
     window.location.href = signOutUrl();
   };
 
+  // See https://github.com/authts/react-oidc-context?tab=readme-ov-file#adding-event-listeners
+  useEffect(() => {
+    // the `return` is important - addAccessTokenExpiring() returns a cleanup function
+    return auth.events.addAccessTokenExpiring(() => {
+      if (
+        alert(
+          "You're about to be signed out due to inactivity. Press continue to stay signed in.",
+        )
+      ) {
+        auth.signinSilent();
+      }
+    });
+  }, [auth]);
+
   const navigation = [
     { name: "Discover", href: "/", current: true },
     ...(auth?.isAuthenticated
