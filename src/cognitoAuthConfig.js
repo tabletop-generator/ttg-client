@@ -18,6 +18,7 @@ const cognitoAuthConfig = {
   onSigninCallback: (_user) => {
     window.history.replaceState({}, document.title, window.location.pathname);
   },
+  // See https://authts.github.io/oidc-client-ts/index.html#md:provider-specific-settings
   // no revoke of "access token" (https://github.com/authts/oidc-client-ts/issues/262)
   revokeTokenTypes: ["refresh_token"],
   // no silent renew via "prompt=none" (https://github.com/authts/oidc-client-ts/issues/366)
