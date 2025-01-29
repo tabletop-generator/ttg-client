@@ -1,23 +1,7 @@
 import { useState } from "react";
 
 export default function GeneratedAsset({ onBack, data }) {
-  const placeholderImages = {
-    locations: "/placeholder/card_environment.png",
-    characters: "/placeholder/card_character.png",
-    quests: "/placeholder/card_quest.png",
-    maps: "/placeholder/card_map.png",
-  };
-
-  const assetStory = {
-    locations: "Description",
-    maps: "Backstory",
-    characters: "Backstory",
-    quests: "Story",
-  };
-
-  const imageSrc = placeholderImages[data?.id] || "/placeholder/default.png";
-  const assetStoryTitle = assetStory[data?.id] || "Story";
-  const [visibility, setVisibility] = useState("Public");
+  const [visibility, setVisibility] = useState(data?.visibility || "Public");
   const [name, setName] = useState(data?.name || "Unnamed");
   const [isEditing, setIsEditing] = useState(false); // State to track edit mode
   const [tempName, setTempName] = useState(name); // Temporary name while editing
@@ -41,22 +25,27 @@ export default function GeneratedAsset({ onBack, data }) {
   };
 
   const formattedId = data?.id
-    ? data.id.charAt(0).toUpperCase() + data.id.slice(1).toLowerCase()
+    ? `ID-${data.id}` // Example of formatting for numeric IDs
     : "Unknown";
 
   return (
     <div className="flex flex-col items-center justify-center min-h-screen">
       <div className="bg-gray-900 rounded-lg shadow-lg p-5 text-center w-4/5 max-w-4xl">
         {/* Image Section */}
-        <img
-          src={imageSrc}
-          alt={`${data?.id || "Unknown"} Asset`}
-          className="w-100 h-100 mx-auto rounded-md shadow-2xl"
-        />
+        {data?.imageUrl ? (
+          <img
+            src={data.imageUrl}
+            alt={data.name || "Generated Asset"}
+            className="w-100 h-100 mx-auto rounded-md shadow-2xl"
+          />
+        ) : (
+          <p className="text-gray-400">No image available.</p>
+        )}
 
         {/* Asset Name Section */}
+        {/* Asset Name Section */}
         <h4 className="text-2xl font-bold text-white mt-4">
-          Your {formattedId} Name
+          {data?.name ? `${data.name}` : "Give your character a name!"}
         </h4>
         <div className="flex flex-col items-center justify-center mt-4 space-y-2 sm:space-y-0 sm:flex-row sm:space-x-4">
           {isEditing ? (
@@ -125,17 +114,17 @@ export default function GeneratedAsset({ onBack, data }) {
           Current visibility: <span className="text-white">{visibility}</span>
         </p>
 
-        {/* Backstory Section */}
+        {/* Description Section */}
         <h4 className="text-2xl font-bold text-white mt-7">
-          <i>{assetStoryTitle}</i>
+          <i>Description</i>
         </h4>
-        {data?.generated && Object.keys(data.generated).length > 0 ? (
-          <pre className="text-sm text-gray-500 mt-4 bg-gray-700 p-4 rounded-md">
-            {JSON.stringify(data.generated, null, 2)}
-          </pre>
+        {data?.description ? (
+          <p className="text-sm text-gray-500 mt-4 bg-gray-700 p-4 rounded-md">
+            {data.description}
+          </p>
         ) : (
           <p className="text-sm text-gray-400 mt-4">
-            Lorem ipsum dolor sit amet, consectetur adipiscing elit...
+            No description available.
           </p>
         )}
 
