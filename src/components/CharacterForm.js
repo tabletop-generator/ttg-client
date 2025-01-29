@@ -1,7 +1,14 @@
-import GeneratedAsset from "@/components/GeneratedAsset";
+// src/components/CharacterForm.js
+
+import { getCharacterImage } from "@/api";
+import logger from "@/utils/logger";
 import { useState } from "react";
+import { useAuth } from "react-oidc-context";
+import GeneratedAsset from "./GeneratedAsset";
 
 export default function CharacterForm({ onBack }) {
+  const auth = useAuth();
+
   const [formData, setFormData] = useState({
     name: "",
     race: "",
@@ -14,56 +21,113 @@ export default function CharacterForm({ onBack }) {
     abilities: "",
     equipment: "",
     motivation: "",
-    pose: "",
   });
 
-  const [isSubmitted, setIsSubmitted] = useState(false); // Tracks if the form is submitted
-  const [generatedResult, setGeneratedResult] = useState(null); // Placeholder for API response
-  const [loading, setLoading] = useState(false); // Tracks loading state
-  const [error, setError] = useState(null); // Tracks errors
+  const [loading, setLoading] = useState(false); // Prevent further submissions while waiting for api return
+  const [generatedResult, setGeneratedResult] = useState(null); // Store what we get back from the api
+  const [error, setError] = useState(null); // Updated when things go wrong, used to prevent submission and tell user about errors
+  //TODO: Add visual cues for common errors, like required fields being empty
 
+  // Remove default HTML functionality and use state to control forms instead
   const handleChange = (e) => {
     const { name, value } = e.target;
     setFormData((prev) => ({ ...prev, [name]: value }));
   };
 
+  // Handle form submission
   const handleSubmit = async (e) => {
     e.preventDefault();
-    setLoading(true); // Start loading
-    setError(null); // Clear any previous errors
+    logger.info("Submitting form...");
+    setLoading(true);
+    setError(null);
+
+    if (!auth.isAuthenticated || !auth.user?.id_token) {
+      const authError = "You must be logged in to perform this action.";
+      setError(authError);
+      logger.error(authError);
+      setLoading(false);
+      return;
+    }
 
     try {
-      // Placeholder for API call
-      console.log("Form data submitted:", formData);
+      // Remove any empty fields from our api request
+      const sanitizedData = Object.fromEntries(
+        Object.entries(formData).filter(([_, value]) => value.trim() !== ""),
+      );
+      logger.info("Sanitized form data:", sanitizedData);
 
-      const response = {
-        // API call to generate will go here
-      };
+      // Make sure required fields arne't empty
+      const requiredFields = ["name", "race", "class", "gender"];
+      const missingFields = requiredFields.filter(
+        (field) => !sanitizedData[field],
+      );
 
-      // Store the response and navigate to GeneratedAsset
+      if (missingFields.length > 0) {
+        const missingError = `Missing required fields: ${missingFields.join(
+          ", ",
+        )}`;
+        setError(missingError);
+        logger.error(missingError);
+        setLoading(false);
+        return;
+      }
+
+      // DEBUG: see everything we're sending in the api call
+      logger.debug("Complete form data to send:", formData);
+
+      // Make the API call (through the function in src/api.js)
+      const response = await getCharacterImage(auth.user, sanitizedData);
+      logger.info("API Response:", response);
+
       setGeneratedResult(response);
-      setIsSubmitted(true); // Navigate to GeneratedAsset
     } catch (err) {
-      setError("An error occurred. Please try again."); // Handle errors
+      const submissionError =
+        "Failed to generate the character. Please try again.";
+      setError(submissionError);
+      logger.error(submissionError, err.message);
     } finally {
-      setLoading(false); // Stop loading
+      setLoading(false);
+      logger.info("Form submission process complete.");
     }
   };
 
-  if (isSubmitted) {
-    // Navigate to GeneratedAsset with the form data and generated result
+  // Generated Asset Display
+
+  // Didn't want to display the generated asset as its own page, using nested component instead
+  // This code will show the asset in place of the character form when a successful API return is stored
+  if (generatedResult && generatedResult.id && generatedResult.imageUrl) {
     return (
       <GeneratedAsset
-        onBack={() => setIsSubmitted(false)} // Allow going back to the form
-        data={{ id: "characters", ...formData, generated: generatedResult }}
+        data={generatedResult}
+        onBack={() => setGeneratedResult(null)} // Pressing back will break the condition (setting state to null) and show the form again
       />
     );
   }
 
+  // Character Form
   return (
     <form onSubmit={handleSubmit} className="space-y-8">
       <div className="space-y-6">
         <h2 className="text-lg font-semibold text-white">Create Character</h2>
+
+        {/* Name Field */}
+        <div>
+          <label
+            htmlFor="name"
+            className="block text-sm font-medium text-white"
+          >
+            Name
+          </label>
+          <input
+            type="text"
+            id="name"
+            name="name"
+            value={formData.name}
+            onChange={handleChange}
+            className="block w-full mt-1 h-12 rounded-md bg-gray-800 border-gray-600 text-white placeholder:text-gray-400 px-3 focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
+            placeholder="Enter character name"
+          />
+        </div>
 
         {/* Dropdowns */}
         <div className="grid grid-cols-1 gap-y-6 sm:grid-cols-2 gap-x-4">
@@ -217,7 +281,6 @@ export default function CharacterForm({ onBack }) {
           "abilities",
           "equipment",
           "motivation",
-          "pose",
         ].map((field) => (
           <div key={field}>
             <label
@@ -251,7 +314,7 @@ export default function CharacterForm({ onBack }) {
         <button
           type="submit"
           className="px-4 py-2 text-sm font-medium text-white bg-indigo-600 rounded-md hover:bg-indigo-500"
-          disabled={loading} // Disable button while loading
+          disabled={loading} // Prevent another send attempt while loading
         >
           {loading ? "Submitting..." : "Submit"}
         </button>
