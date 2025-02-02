@@ -1,6 +1,7 @@
+// cognitoAuthConfig.js
+import { hashEmail } from "@/utils/hashedEmail";
+import { postUser } from "@/utils/postNewUser";
 import { WebStorageStateStore } from "oidc-client-ts";
-
-// See https://authts.github.io/oidc-client-ts/index.html
 
 /**
  * @type {import("oidc-client-ts").UserManagerSettings}
@@ -12,16 +13,41 @@ const cognitoAuthConfig = {
   response_type: "code",
   scope: "email openid",
   userStore:
-    typeof window !== "undefined" // window is undefined during build
+    typeof window !== "undefined"
       ? new WebStorageStateStore({ store: window.localStorage })
       : null,
-  onSigninCallback: (_user) => {
+  onSigninCallback: async (_user) => {
+    console.log("Before clearing hash:", window.location.hash);
     window.history.replaceState({}, document.title, window.location.pathname);
+
+    // Extract the user's ID token and email
+    const idToken = _user.id_token;
+    const email = _user?.profile?.email;
+
+    try {
+      // Hash the email
+      const hashedEmail = await hashEmail(email);
+      console.log("Hashed Email:", hashedEmail);
+
+      // Create a user object to send
+      const user = {
+        id_token: idToken,
+        hashedEmail,
+      };
+
+      // Call postUser to send the user data to the backend
+      const response = await postUser(user);
+
+      if (response.status === 200) {
+        console.log("User already exists:", response.data);
+      } else if (response.status === 201) {
+        console.log("New user created:", response.data);
+      }
+    } catch (error) {
+      console.error("Error during sign-in callback:", error);
+    }
   },
-  // See https://authts.github.io/oidc-client-ts/index.html#md:provider-specific-settings
-  // no revoke of "access token" (https://github.com/authts/oidc-client-ts/issues/262)
   revokeTokenTypes: ["refresh_token"],
-  // no silent renew via "prompt=none" (https://github.com/authts/oidc-client-ts/issues/366)
   automaticSilentRenew: false,
 };
 
