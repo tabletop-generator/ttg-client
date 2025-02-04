@@ -73,3 +73,48 @@ export async function getAssetImage(user, assetData, assetType) {
     throw err;
   }
 }
+
+/***************************************************************
+ * Function: postUser
+ * Description: Sends a POST request to register a user
+ *              when they log in.
+ * Parameters:
+ *   - user (Object): Contains user details, including email and ID token.
+ * Returns:
+ *   - Object: Response status and data from the API.
+ * Throws:
+ *   - Error if the API call fails.
+ ****************************************************************/
+
+export async function postUser(user) {
+  try {
+    // Send a POST request to create a user
+    const response = await fetch(`${apiUrl}/v1/users`, {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${user.id_token}`, // Use the ID token for authentication
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        email: user.email, // Send the user's email in the request body
+      }),
+    });
+
+    // If the API response is not OK, log the error and throw an exception
+    if (!response.ok) {
+      const errorDetails = await response.text();
+      console.error(
+        `API call failed with status: ${response.status}, Details: ${errorDetails}`,
+      );
+      throw new Error(`API call failed with status: ${response.status}`);
+    }
+
+    // If the request is successful, parse and return the response data
+    const data = await response.json();
+    return { status: response.status, data };
+  } catch (error) {
+    // Catch and log any errors that occur during the API request
+    console.error("Error during postUser call:", error);
+    throw error;
+  }
+}
