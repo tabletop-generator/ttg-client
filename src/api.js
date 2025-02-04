@@ -4,7 +4,21 @@ const logger = require("@/utils/logger");
 
 const apiUrl = process.env.API_URL || "http://localhost:8080";
 
-export async function getCharacterImage(user, characterData) {
+/****************************************************************
+ * Function: getAssetImage
+ * Description: Sends a POST request to generate an asset image
+ *              based on the provided asset data and type.
+ * Parameters:
+ *   - user (Object): Contains authentication details, including the ID token.
+ *   - assetData (Object): The data required to generate the asset image.
+ *   - assetType (String): The type of asset to generate.
+ * Returns:
+ *   - Object: The response data containing the generated asset details.
+ * Throws:
+ *   - Error if the API call fails or returns a non-OK response.
+ ****************************************************************/
+
+export async function getAssetImage(user, assetData, assetType) {
   logger.info("Starting API call to generate character image...");
 
   // Use the ID token with the "Bearer" prefix
@@ -19,9 +33,9 @@ export async function getCharacterImage(user, characterData) {
 
     // Construct the request body in the expected order
     const requestBody = {
-      type: "character", // Ensures "type" is first
+      type: assetType, // Ensures "type" is first
       visibility: "public", // Ensures "visibility" is second
-      data: { ...characterData }, // Ensures "data" is last
+      data: { ...assetData }, // Ensures "data" is last
     };
 
     // Log the request details

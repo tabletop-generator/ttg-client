@@ -1,6 +1,6 @@
 // src/components/CharacterForm.js
 
-import { getCharacterImage } from "@/api";
+import { getAssetImage } from "@/api";
 import logger from "@/utils/logger";
 import { useState } from "react";
 import { useAuth } from "react-oidc-context";
@@ -76,7 +76,11 @@ export default function CharacterForm({ onBack }) {
       logger.debug("Complete form data to send:", formData);
 
       // Make the API call (through the function in src/api.js)
-      const response = await getCharacterImage(auth.user, sanitizedData);
+      const response = await getAssetImage(
+        auth.user,
+        sanitizedData,
+        "character",
+      ); // ***Specify what type of asset are we generating e.g ["character", "quest", "quest", "map"]
       logger.info("API Response:", response);
 
       setGeneratedResult(response);
