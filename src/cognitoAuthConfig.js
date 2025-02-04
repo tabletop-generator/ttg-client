@@ -4,6 +4,10 @@ import { WebStorageStateStore } from "oidc-client-ts";
 /**
  * @type {import("oidc-client-ts").UserManagerSettings}
  */
+
+const logLevel = process.env.NEXT_PUBLIC_LOG_LEVEL; // Retrieve the log level for controlling console logs securely
+const isDebug = logLevel === "debug"; // Boolean flag to enable debug-level console logging
+
 const cognitoAuthConfig = {
   authority: `https://cognito-idp.${process.env.NEXT_PUBLIC_AWS_REGION}.amazonaws.com/${process.env.NEXT_PUBLIC_AWS_COGNITO_POOL_ID}`,
   client_id: process.env.NEXT_PUBLIC_AWS_COGNITO_CLIENT_ID,
@@ -34,7 +38,9 @@ const cognitoAuthConfig = {
       id_token: _user.id_token,
       email: _user.profile?.email, // Ensure email exists
     };
-    console.log("Fetched user info from Cognito:", userData);
+    if (isDebug) {
+      console.log("Fetched user info from Cognito:", userData);
+    }
 
     // Send user data to API and handle response
     try {
@@ -42,25 +48,41 @@ const cognitoAuthConfig = {
       const response = await postUser(userData);
 
       if (response.status === 200) {
-        console.log("User already exists:", response.data);
+        if (isDebug) {
+          console.log("User already exists:", response.data);
+        } else {
+          console.log("User already exists!");
+        }
       } else if (response.status === 201) {
-        console.log("New user created:", response.data);
+        if (isDebug) {
+          console.log("New user created:", response.data);
+        } else {
+          console.log("New user created!");
+        }
       } else {
-        console.warn(
-          "Unexpected response status:",
-          response.status,
-          response.data,
-        );
+        if (isDebug) {
+          console.warn(
+            "Unexpected response status:",
+            response.status,
+            response.data,
+          );
+        } else {
+          console.warn("Unexpected response status:", response.status);
+        }
       }
     } catch (error) {
       console.error("Error posting user:", error.message);
 
       if (error.response) {
-        console.error(
-          "API responded with:",
-          error.response.status,
-          error.response.data,
-        );
+        if (isDebug) {
+          console.error(
+            "API responded with:",
+            error.response.status,
+            error.response.data,
+          );
+        } else {
+          console.error("API responded with:", error.response.status);
+        }
       }
     }
   },
