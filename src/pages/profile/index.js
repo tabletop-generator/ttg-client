@@ -1,3 +1,5 @@
+// pages/profile/index.js
+
 import AssetGrid from "@/components/Profile/AssetGrid";
 import CollectionDetails from "@/components/Profile/CollectionDetails";
 import CollectionGrid from "@/components/Profile/CollectionGrid";
@@ -5,9 +7,8 @@ import ProfileHeader from "@/components/Profile/ProfileHeader";
 import TabNavigation from "@/components/Profile/TabNavigation";
 import { useRouter } from "next/router";
 import { useEffect, useState } from "react";
-import { useAuth } from "react-oidc-context";
 
-export default function Profile() {
+function Profile() {
   const auth = useAuth(); // Access Cognito auth context
   const router = useRouter();
   const { tab = "assets" } = router.query;
@@ -132,3 +133,5 @@ export default function Profile() {
     </div>
   );
 }
+
+export default Profile;
