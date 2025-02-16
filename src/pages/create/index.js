@@ -1,3 +1,5 @@
+// pages/create/index.js
+
 import CharacterForm from "@/components/CharacterForm";
 import LocationsForm from "@/components/LocationForm";
 import MapForm from "@/components/MapForm";
@@ -32,7 +34,7 @@ const options = [
   },
 ];
 
-export default function CreatePage() {
+function CreatePage() {
   const [selectedOption, setSelectedOption] = useState(null);
 
   const handleSelect = (optionId) => {
@@ -78,3 +80,5 @@ export default function CreatePage() {
     </div>
   );
 }
+
+export default CreatePage;
