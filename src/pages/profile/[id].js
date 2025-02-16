@@ -1,8 +1,10 @@
+// pages/profile/[id].js
+
 import AssetDetailsCard from "@/components/Profile/AssetDetailsCard";
 import { useRouter } from "next/router";
 import { useEffect, useState } from "react";
 
-export default function AssetDetails() {
+function AssetDetails() {
   const router = useRouter();
   const { id } = router.query; // Get the asset ID from the route
 
@@ -97,3 +99,5 @@ export default function AssetDetails() {
 
   return <AssetDetailsCard asset={asset} onBack={() => router.back()} />;
 }
+
+export default AssetDetails;

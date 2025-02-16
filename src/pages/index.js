@@ -1,8 +1,10 @@
+// pages/index.js
+
 import GradientOverlay from "../components/GradientTransitionLarge";
 import PinterestGrid from "../components/PinterestGrid";
 import SearchBar from "../components/SearchBar";
 
-export default function Home() {
+function Home() {
   return (
     <>
       {/* Add a container for all elements */}
@@ -17,3 +19,8 @@ export default function Home() {
     </>
   );
 }
+
+// Mark page as not requiring authentication
+Home.protected = false;
+
+export default Home;
