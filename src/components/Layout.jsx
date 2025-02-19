@@ -1,3 +1,5 @@
+/* eslint-disable @next/next/no-img-element */
+import { useUser } from "@/context/UserContext";
 import {
   Disclosure,
   DisclosureButton,
@@ -20,6 +22,8 @@ export default function Layout({ children }) {
     return classes.filter(Boolean).join(" ");
   };
 
+  const { user, setUser } = useUser();
+
   // https://authts.github.io/oidc-client-ts/index.html#md:logging
   if (process.env.NODE_ENV !== "development") {
     Log.setLevel(Log.NONE);
@@ -37,6 +41,19 @@ export default function Layout({ children }) {
 
     // Remove user from the oidc context
     auth.removeUser();
+
+    /********
+     * Clearing up the app before sign-out
+     *******/
+
+    setUser(null); // Set user to null to clear cache
+
+    // Clear local storage info
+    localStorage.clear();
+    sessionStorage.clear();
+
+    // Manually triggers a storage event to notify other parts of the app (or open tabs) that the localStorage or sessionStorage has been modified
+    window.dispatchEvent(new Event("storage"));
 
     // Redirect to the Cognito sign-out URL
     window.location.href = signOutUrl();
@@ -81,6 +98,9 @@ export default function Layout({ children }) {
           },
     },
   ];
+
+  //If user is authenticated assign the user info to be used, in not null
+  const userInfo = auth?.isAuthenticated ? user : null;
 
   const userNavigation = auth?.isAuthenticated
     ? [
@@ -150,8 +170,8 @@ export default function Layout({ children }) {
                           <MenuButton className="relative flex max-w-xs items-center rounded-full bg-gray-800 text-sm focus:outline-none focus:ring-2 focus:ring-white focus:ring-offset-2 focus:ring-offset-gray-800">
                             <span className="sr-only">Open user menu</span>
                             <img
-                              alt=""
-                              src="/placeholder/p03.png"
+                              alt="User profile"
+                              src={userInfo?.profilePictureUrl} //use the fetch user info for img url (Desktop view)
                               className="size-8 rounded-full"
                             />
                           </MenuButton>
@@ -221,13 +241,15 @@ export default function Layout({ children }) {
                     <div className="shrink-0">
                       <img
                         alt=""
-                        src="/placeholder/p03.png"
+                        src={userInfo?.profilePictureUrl} //use the fetch user info for img url (Mobile view)
                         className="size-10 rounded-full"
                       />
                     </div>
                     <div className="ml-3">
+                      {/* Display the user's name or a fallback */}
                       <div className="text-base font-medium text-white">
-                        {auth?.user?.profile["cognito:username"]}
+                        {userInfo?.displayName ||
+                          auth?.user?.profile["cognito:username"]}
                       </div>
                     </div>
                   </div>
