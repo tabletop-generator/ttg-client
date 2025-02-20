@@ -32,7 +32,9 @@ export default function GeneratedAsset({ onBack, data }) {
     <div className="flex flex-col items-center justify-center min-h-screen">
       <div className="bg-gray-900 rounded-lg shadow-lg p-5 text-center w-4/5 max-w-4xl">
         {/* Image Section */}
+
         {data?.imageUrl ? (
+          // eslint-disable-next-line @next/next/no-img-element
           <img
             src={data.imageUrl}
             alt={data.name || "Generated Asset"}

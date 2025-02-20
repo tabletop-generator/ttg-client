@@ -1,6 +1,6 @@
 import * as Headless from "@headlessui/react";
 import clsx from "clsx";
-import React, { forwardRef } from "react";
+import { forwardRef } from "react";
 import { TouchTarget } from "./button";
 import { Link } from "./link";
 
@@ -46,6 +46,7 @@ export function Avatar({
           </text>
         </svg>
       )}
+      {/* eslint-disable-next-line @next/next/no-img-element */}
       {src && <img className="size-full" src={src} alt={alt} />}
     </span>
   );

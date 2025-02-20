@@ -15,21 +15,28 @@ export default function CollectionGrid({
         </button>
       </div>
 
-      {/* Collections Grid */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-        {collections.map((collection) => (
-          <button
-            key={collection.id}
-            onClick={() => onCollectionClick(collection)}
-            className="relative bg-cover bg-center rounded-lg text-white text-xl font-bold p-4 h-32 flex items-center justify-center hover:opacity-90 shadow-lg"
-            style={{
-              backgroundImage: `url(${collection.assets[0]?.image || "/placeholder/default.png"})`,
-            }}
-          >
-            {collection.name}
-          </button>
-        ))}
-      </div>
+      {/* Conditional Rendering for Collections */}
+      {collections.length === 0 ? (
+        <div className="text-gray-500 text-center">
+          Be creative! Unleash the collector in you and start your first
+          collection today!
+        </div>
+      ) : (
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          {collections.map((collection) => (
+            <button
+              key={collection.id}
+              onClick={() => onCollectionClick(collection)}
+              className="relative bg-cover bg-center rounded-lg text-white text-xl font-bold p-4 h-32 flex items-center justify-center hover:opacity-90 shadow-lg"
+              style={{
+                backgroundImage: `url(${collection.assets[0]?.image || "/placeholder/default.png"})`,
+              }}
+            >
+              {collection.name}
+            </button>
+          ))}
+        </div>
+      )}
     </div>
   );
 }

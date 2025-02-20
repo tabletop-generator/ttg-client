@@ -9,6 +9,7 @@ function Home() {
     <>
       {/* Add a container for all elements */}
       <div className="flex flex-col items-center space-y-8 p-6">
+        {/* eslint-disable-next-line @next/next/no-img-element */}
         <img src="/logo_hero.png" alt="TTG logo"></img>
         <div className="w-full flex justify-center">
           <SearchBar />
