@@ -1,8 +1,7 @@
-import React from "react";
-
 export default function OptionCard({ title, description, image, onSelect }) {
   return (
     <div className="bg-white rounded-lg shadow-md overflow-hidden transform transition-transform hover:scale-105">
+      {/* eslint-disable-next-line @next/next/no-img-element */}
       <img
         src={image}
         alt={title}

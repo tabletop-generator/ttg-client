@@ -7,7 +7,7 @@ export default function AssetDetailsCard({ asset, onBack }) {
   const [newName, setNewName] = useState(asset?.name || "Unnamed"); // Fake name change
   const [isEditingName, setIsEditingName] = useState(false);
 
-  const defaultImage = "/placeholder/default.png"; // Fallback image
+  const defaultImage = "/placeholder/p01.png"; // Fallback image
 
   const handleLike = () => {
     setLikes(likes + 1); // Increment likes
@@ -27,8 +27,9 @@ export default function AssetDetailsCard({ asset, onBack }) {
     <div className="flex items-center justify-center min-h-screen bg-gray-900 text-white">
       <div className="bg-gray-800 rounded-lg shadow-lg p-6 w-4/5 max-w-2xl">
         {/* Asset Image */}
+        {/* eslint-disable-next-line @next/next/no-img-element */}
         <img
-          src={asset.image || defaultImage}
+          src={asset.imageUrl || defaultImage}
           alt={asset.name || "Unknown Asset"}
           className="w-full rounded-lg mb-6"
         />
@@ -94,7 +95,7 @@ export default function AssetDetailsCard({ asset, onBack }) {
         {/* Backstory */}
         <h2 className="text-2xl font-bold text-white mb-4">Backstory</h2>
         <p className="text-gray-300 leading-relaxed mb-6">
-          {asset.backstory || "No backstory available."}
+          {asset.description || "No backstory available."}
         </p>
 
         {/* Visibility Toggle Buttons */}

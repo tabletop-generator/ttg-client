@@ -1,12 +1,15 @@
 // pages/profile/index.js
-
 import AssetGrid from "@/components/Profile/AssetGrid";
 import CollectionDetails from "@/components/Profile/CollectionDetails";
 import CollectionGrid from "@/components/Profile/CollectionGrid";
 import ProfileHeader from "@/components/Profile/ProfileHeader";
 import TabNavigation from "@/components/Profile/TabNavigation";
+import { useUser } from "@/context/UserContext";
 import { useRouter } from "next/router";
 import { useEffect, useState } from "react";
+import { useAuth } from "react-oidc-context";
+const logLevel = process.env.NEXT_PUBLIC_LOG_LEVEL; // Retrieve the log level for controlling console logs securely
+const isDebug = logLevel === "debug"; // Boolean flag to enable debug-level console logging
 
 function Profile() {
   const auth = useAuth(); // Access Cognito auth context
@@ -18,72 +21,29 @@ function Profile() {
   const [collections, setCollections] = useState([]);
   const [selectedCollection, setSelectedCollection] = useState(null);
 
-  // Extract user information from Cognito
-  const user = {
-    username: auth?.user?.profile?.["cognito:username"] || "Guest",
-    profilePhoto: "/placeholder/p03.png", // Placeholder profile photo
-    bio: "No bio available", // Fallback bio
-  };
+  const { user } = useUser(); // Get user data from context
 
-  // Placeholder data for assets and collections
+  // Get User Assets array
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  const userAssets = user?.assets || [];
+
+  if (isDebug) {
+    console.log("User Assets:", userAssets);
+  }
+
+  // Get User Collection array
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  const userCollections = user?.collections || [];
+
+  if (isDebug) {
+    console.log("User Collections:", userCollections);
+  }
+
+  // Set data for assets and collections
   useEffect(() => {
-    const placeholderAssets = [
-      {
-        id: "asset1",
-        name: "Lyricelle Emberwhisper",
-        type: "character",
-        image: "/placeholder/card_character.png",
-      },
-      {
-        id: "asset2",
-        name: "Whispering Woods",
-        type: "location",
-        image: "/placeholder/card_environment.png",
-      },
-      {
-        id: "asset3",
-        name: "Map of Eldoria",
-        type: "map",
-        image: "/placeholder/card_map.png",
-      },
-      {
-        id: "asset4",
-        name: "Quest for the Eternal Flame",
-        type: "quest",
-        image: "/placeholder/card_quest.png",
-      },
-    ];
-
-    const placeholderCollections = [
-      {
-        id: "collection1",
-        name: "Characters",
-        assets: [
-          {
-            id: "asset1",
-            name: "Lyricelle Emberwhisper",
-            type: "character",
-            image: "/placeholder/card_character.png",
-          },
-        ],
-      },
-      {
-        id: "collection2",
-        name: "Locations",
-        assets: [
-          {
-            id: "asset2",
-            name: "Whispering Woods",
-            type: "location",
-            image: "/placeholder/card_environment.png",
-          },
-        ],
-      },
-    ];
-
-    setAssets(placeholderAssets);
-    setCollections(placeholderCollections);
-  }, []);
+    setAssets(userAssets);
+    setCollections(userCollections);
+  }, [userAssets, userCollections]);
 
   const handleTabChange = (tab) => {
     setActiveTab(tab);
@@ -104,9 +64,9 @@ function Profile() {
       <div className="container mx-auto p-6">
         {/* Profile Header */}
         <ProfileHeader
-          username={user.username}
-          profilePhoto={user.profilePhoto}
-          bio={user.bio}
+          username={user?.displayName}
+          profilePhoto={user?.profilePictureUrl}
+          bio={user?.profileBio}
         />
 
         {/* Tab Navigation */}
@@ -114,8 +74,13 @@ function Profile() {
 
         {/* Render Active Tab Content */}
         {activeTab === "assets" && (
-          <AssetGrid assets={assets} onAssetClick={handleAssetClick} />
+          <AssetGrid
+            assets={assets}
+            onAssetClick={handleAssetClick}
+            user={user}
+          />
         )}
+
         {activeTab === "collections" && !selectedCollection && (
           <CollectionGrid
             collections={collections}

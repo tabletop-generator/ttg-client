@@ -1,4 +1,4 @@
-import React, { useState, useEffect, loadImages } from "react";
+import { useEffect, useState } from "react";
 
 export default function PinterestGrid() {
   // State to store images and control lazy loading
@@ -34,6 +34,7 @@ export default function PinterestGrid() {
 
     window.addEventListener("scroll", handleScroll);
     return () => window.removeEventListener("scroll", handleScroll);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [images]);
 
   return (
@@ -45,6 +46,7 @@ export default function PinterestGrid() {
             key={image.id}
             className="relative overflow-hidden rounded-lg shadow-md"
           >
+            {/* eslint-disable-next-line @next/next/no-img-element */}
             <img
               src={image.src}
               alt={`Image ${image.id}`}

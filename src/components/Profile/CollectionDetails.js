@@ -18,6 +18,7 @@ export default function CollectionDetails({
             className="bg-gray-800 rounded-lg p-4 text-center"
             onClick={() => onAssetClick(asset.id)}
           >
+            {/* eslint-disable-next-line @next/next/no-img-element */}
             <img
               src={asset.image}
               alt={asset.name}

@@ -1,6 +1,7 @@
 export default function ProfileHeader({ username, profilePhoto, bio }) {
   return (
     <div className="text-center mb-6">
+      {/* eslint-disable-next-line @next/next/no-img-element */}
       <img
         src={profilePhoto}
         alt={`${username}'s profile`}

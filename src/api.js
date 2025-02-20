@@ -3,7 +3,8 @@
 const logger = require("@/utils/logger");
 
 const apiUrl = process.env.API_URL || "http://localhost:8080";
-
+const logLevel = process.env.NEXT_PUBLIC_LOG_LEVEL; // Retrieve the log level for controlling console logs securely
+const isDebug = logLevel === "debug"; // Boolean flag to enable debug-level console logging
 /****************************************************************
  * Function: getAssetImage
  * Description: Sends a POST request to generate an asset image
@@ -115,6 +116,89 @@ export async function postUser(user) {
   } catch (error) {
     // Catch and log any errors that occur during the API request
     console.error("Error during postUser call:", error);
+    throw error;
+  }
+}
+
+/****************************************************************
+ * Function: getUser
+ * Description: Sends a GET request to retrieve user information
+ *              from the backend using the provided email.
+ * Parameters:
+ *   - user (Object): Contains authentication details, including the ID token.
+ *   - email (String): The email of the user whose details need to be fetched.
+ * Returns:
+ *   - Object: Response status and data from the API.
+ * Throws:
+ *   - Error if the API call fails or returns a non-OK response.
+ ****************************************************************/
+
+export async function getUser(user, email) {
+  try {
+    const response = await fetch(`${apiUrl}/v1/users/${email}`, {
+      method: "GET",
+      headers: {
+        Authorization: `Bearer ${user.id_token}`,
+        "Content-Type": "application/json",
+      },
+    });
+
+    if (!response.ok) {
+      const errorDetails = await response.text();
+      console.error(
+        `API call failed with status: ${response.status}, Details: ${errorDetails}`,
+      );
+      throw new Error(`API call failed with status: ${response.status}`);
+    }
+
+    const data = await response.json();
+    return { status: response.status, data };
+  } catch (error) {
+    console.error("Error during getUser call:", error);
+    throw error;
+  }
+}
+
+/****************************************************************
+ * Function: getAssetByID
+ * Description: Sends a GET request to retrieve user's asset information
+ *              from the backend using the provided asset ID.
+ * Parameters:
+ *   - user (Object): Contains authentication details, including the ID token.
+ *   - id (String): The asset UUID.
+ * Returns:
+ *   - Object: Response status and data from the API.
+ * Throws:
+ *   - Error if the API call fails or returns a non-OK response.
+ ****************************************************************/
+export async function getAssetByID(user, uuid) {
+  console.log(`Fetching asset details for ID: ${uuid}`);
+
+  if (!user?.id_token) {
+    throw new Error("User authentication token is missing");
+  }
+
+  try {
+    const response = await fetch(`${apiUrl}/v1/assets/${uuid}`, {
+      method: "GET",
+      headers: {
+        Authorization: `Bearer ${user.id_token}`,
+        "Content-Type": "application/json",
+      },
+    });
+
+    const data = await response.json();
+    if (isDebug) {
+      console.log("API Response:", data);
+    } // Debug response
+
+    if (!response.ok) {
+      throw new Error(`API Error: ${response.status}`);
+    }
+
+    return { status: response.status, data };
+  } catch (error) {
+    console.error("Error fetching asset:", error);
     throw error;
   }
 }
