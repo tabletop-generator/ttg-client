@@ -202,3 +202,33 @@ export async function getAssetByID(user, uuid) {
     throw error;
   }
 }
+
+/***************************************************************
+ * Function: updatePrismaUserInfo
+ * Description: Sends a PATCH request to update a user information
+ ****************************************************************/
+
+export async function updatePrismaUserInfo(user, newInfo) {
+  console.log("Update User Request Sent ");
+  return;
+}
+
+/***************************************************************
+ * Function: updatePrismaAssetInfo
+ * Description: Sends a PATCH request to update a user information
+ ****************************************************************/
+
+export async function updatePrismaAssetInfo(user, newInfo) {
+  console.log("Update Asset Request Sent ");
+  return;
+}
+
+/***************************************************************
+ * Function: deletePrismaAssetInfo
+ * Description: Sends a DELETE request to update a user information
+ ****************************************************************/
+
+export async function deletePrismaAssetInfo(user, newInfo) {
+  console.log("DELETE Asset Request Sent ");
+  return;
+}
