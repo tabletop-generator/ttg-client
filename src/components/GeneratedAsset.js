@@ -34,14 +34,15 @@ export default function GeneratedAsset({ onBack, data }) {
         {/* Image Section */}
 
         {data?.imageUrl ? (
-          // eslint-disable-next-line @next/next/no-img-element
           <img
             src={data.imageUrl}
             alt={data.name || "Generated Asset"}
             className="w-100 h-100 mx-auto rounded-md shadow-2xl"
           />
         ) : (
-          <p className="text-gray-400">No image available.</p>
+          <p className="text-gray-400">
+            No image available. Try refreshing or checking your user profile.
+          </p>
         )}
 
         {/* Asset Name Section */}
