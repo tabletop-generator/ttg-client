@@ -21,10 +21,20 @@ export default function MapForm({ onBack }) {
   const [error, setError] = useState(null);
 
   // Options for the Terrain Multi-Select
-  const options = [
-    { value: "PlaceHolder1", label: "PlaceHolder1" },
-    { value: "PlaceHolder2", label: "PlaceHolder2" },
-    { value: "PlaceHolder3", label: "PlaceHolder3" },
+  // Options for the Terrain Multi-Select
+  const terrainOptions = [
+    { value: "rivers/lakes", label: "Rivers/Lakes" },
+    {
+      value: "cliffs and elevation changes",
+      label: "Cliffs and Elevation Changes",
+    },
+    { value: "bridges", label: "Bridges" },
+    { value: "roads", label: "Roads" },
+    { value: "lava pools", label: "Lava Pools" },
+    { value: "hidden paths", label: "Hidden Paths" },
+    { value: "tunnels", label: "Tunnels" },
+    { value: "fortifications", label: "Fortifications" },
+    { value: "ruins", label: "Ruins" },
   ];
 
   // Custom styles for Terrain Multi-Select
@@ -167,10 +177,33 @@ export default function MapForm({ onBack }) {
               name="type"
               value={formData.type}
               onChange={handleChange}
-              className="block w-full mt-1 h-12 rounded-md bg-gray-800 border-gray-600 text-white placeholder:text-gray-400 focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm px-3"
+              className="block w-full mt-1 h-12 rounded-md bg-gray-800 border-gray-600 text-white focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm px-3"
             >
               <option value="">Select a type</option>
-              {["PlaceHolder1", "PlaceHolder2", "PlaceHolder3"].map((type) => (
+              {[
+                "forest",
+                "plains",
+                "wilderness",
+                "swamp",
+                "island/coastal",
+                "desert",
+                "arctic",
+                "mountains",
+                "city/town",
+                "tavern/inn",
+                "festival",
+                "temple",
+                "ship",
+                "dungeon",
+                "castle",
+                "cave system",
+                "battlefield",
+                "astral/planar",
+                "feywilds",
+                "dreamscape",
+                "graveyard",
+                "hell",
+              ].map((type) => (
                 <option key={type} value={type}>
                   {type}
                 </option>
@@ -191,10 +224,16 @@ export default function MapForm({ onBack }) {
               name="style"
               value={formData.style}
               onChange={handleChange}
-              className="block w-full mt-1 h-12 rounded-md bg-gray-800 border-gray-600 text-white placeholder:text-gray-400 focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm px-3"
+              className="block w-full mt-1 h-12 rounded-md bg-gray-800 border-gray-600 text-white focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm px-3"
             >
               <option value="">Select a style</option>
-              {["PlaceHolder1", "PlaceHolder2", "PlaceHolder3"].map((style) => (
+              {[
+                "hand-drawn",
+                "minimalist grid",
+                "fantasy ink",
+                "soft and colorful",
+                "dark and gritty",
+              ].map((style) => (
                 <option key={style} value={style}>
                   {style}
                 </option>
@@ -215,10 +254,10 @@ export default function MapForm({ onBack }) {
               name="scale"
               value={formData.scale}
               onChange={handleChange}
-              className="block w-full mt-1 h-12 rounded-md bg-gray-800 border-gray-600 text-white placeholder:text-gray-400 focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm px-3"
+              className="block w-full mt-1 h-12 rounded-md bg-gray-800 border-gray-600 text-white focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm px-3"
             >
               <option value="">Select a scale</option>
-              {["PlaceHolder1", "PlaceHolder2", "PlaceHolder3"].map((scale) => (
+              {["small", "medium", "large"].map((scale) => (
                 <option key={scale} value={scale}>
                   {scale}
                 </option>
@@ -237,8 +276,8 @@ export default function MapForm({ onBack }) {
             <Select
               id="terrain"
               isMulti
-              options={options}
-              value={options.filter((option) =>
+              options={terrainOptions}
+              value={terrainOptions.filter((option) =>
                 formData.terrain.includes(option.value),
               )}
               onChange={handleTerrainChange}
@@ -246,13 +285,14 @@ export default function MapForm({ onBack }) {
               placeholder="Select terrains"
             />
           </div>
+
           {/* POI */}
           <div>
             <label
               htmlFor="poi"
               className="block text-sm font-medium text-white"
             >
-              POI
+              Points of Interest
             </label>
             <textarea
               id="poi"

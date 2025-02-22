@@ -1,4 +1,6 @@
-import GeneratedAsset from "@/components/GeneratedAsset"; // NEW
+// src/components/CharacterForm.js
+
+import GeneratedAsset from "@/components/GeneratedAsset";
 import { useState } from "react";
 
 export default function LocationForm({ onBack }) {
@@ -21,6 +23,7 @@ export default function LocationForm({ onBack }) {
   const [generatedResult, setGeneratedResult] = useState(null); // Placeholder for API response
   const [loading, setLoading] = useState(false); // Tracks loading state
   const [error, setError] = useState(null); // Tracks errors
+  const [missingFields, setMissingFields] = useState([]); // Tracks which required fields are missing
 
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -29,32 +32,48 @@ export default function LocationForm({ onBack }) {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    setLoading(true); // Start loading
-    setError(null); // Clear any previous errors
+    setLoading(true);
+    setError(null);
+    setMissingFields([]);
+
+    // Required dropdown fields check
+    const requiredFields = [
+      "type",
+      "terrain",
+      "atmosphere",
+      "inhabitants",
+      "climate",
+      "dangerLevel",
+    ];
+    const emptyFields = requiredFields.filter((field) => !formData[field]);
+
+    if (emptyFields.length > 0) {
+      setError(`You must select: ${emptyFields.join(", ")}.`);
+      setMissingFields(emptyFields);
+      setLoading(false);
+      return;
+    }
 
     try {
-      // Placeholder for API call
       console.log("Form data submitted:", formData);
 
       const response = {
         // API call to generate will go here
       };
 
-      // Store the response and navigate to GeneratedAsset
       setGeneratedResult(response);
-      setIsSubmitted(true); // Navigate to GeneratedAsset
+      setIsSubmitted(true);
     } catch (err) {
-      setError("An error occurred. Please try again."); // Handle errors
+      setError("An error occurred. Please try again.");
     } finally {
-      setLoading(false); // Stop loading
+      setLoading(false);
     }
   };
 
   if (isSubmitted) {
-    // Navigate to GeneratedAsset with the form data and generated result
     return (
       <GeneratedAsset
-        onBack={() => setIsSubmitted(false)} // Allow going back to the form
+        onBack={() => setIsSubmitted(false)}
         data={{ id: "locations", ...formData, generated: generatedResult }}
       />
     );
@@ -66,7 +85,7 @@ export default function LocationForm({ onBack }) {
         <h2 className="text-lg font-semibold text-white">Create Location</h2>
 
         {/* Display Error Message */}
-        {error && <p className="text-red-500">{error}</p>}
+        {error && <p className="text-red-500 font-bold">{error}</p>}
 
         {/* Location Name */}
         <div>
@@ -89,23 +108,11 @@ export default function LocationForm({ onBack }) {
 
         {/* Second Section: Dropdowns */}
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-4 gap-y-6">
-          {/* Type */}
-          <div>
-            <label
-              htmlFor="type"
-              className="block text-sm font-medium text-white"
-            >
-              Location Type
-            </label>
-            <select
-              id="type"
-              name="type"
-              value={formData.type}
-              onChange={handleChange}
-              className="block w-full mt-1 h-12 rounded-md bg-gray-800 border-gray-600 text-white focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm px-3"
-            >
-              <option value="">Select a type</option>
-              {[
+          {[
+            {
+              id: "type",
+              label: "Location Type",
+              options: [
                 "outdoors",
                 "city",
                 "village",
@@ -116,30 +123,12 @@ export default function LocationForm({ onBack }) {
                 "cave system",
                 "tower",
                 "floating island",
-              ].map((type) => (
-                <option key={type} value={type}>
-                  {type}
-                </option>
-              ))}
-            </select>
-          </div>
-          {/* Terrain */}
-          <div>
-            <label
-              htmlFor="terrain"
-              className="block text-sm font-medium text-white"
-            >
-              Terrain Type
-            </label>
-            <select
-              id="terrain"
-              name="terrain"
-              value={formData.terrain}
-              onChange={handleChange}
-              className="block w-full mt-1 h-12 rounded-md bg-gray-800 border-gray-600 text-white focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm px-3"
-            >
-              <option value="">Select a terrain</option>
-              {[
+              ],
+            },
+            {
+              id: "terrain",
+              label: "Terrain Type",
+              options: [
                 "forest",
                 "desert",
                 "swamp",
@@ -150,31 +139,12 @@ export default function LocationForm({ onBack }) {
                 "grasslands",
                 "volcanic",
                 "astral/planar",
-              ].map((terrain) => (
-                <option key={terrain} value={terrain}>
-                  {terrain}
-                </option>
-              ))}
-            </select>
-          </div>
-
-          {/* Atmosphere */}
-          <div>
-            <label
-              htmlFor="atmosphere"
-              className="block text-sm font-medium text-white"
-            >
-              Atmosphere
-            </label>
-            <select
-              id="atmosphere"
-              name="atmosphere"
-              value={formData.atmosphere}
-              onChange={handleChange}
-              className="block w-full mt-1 h-12 rounded-md bg-gray-800 border-gray-600 text-white focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm px-3"
-            >
-              <option value="">Select an atmosphere</option>
-              {[
+              ],
+            },
+            {
+              id: "atmosphere",
+              label: "Atmosphere",
+              options: [
                 "mysterious",
                 "forboding",
                 "peaceful",
@@ -185,31 +155,12 @@ export default function LocationForm({ onBack }) {
                 "war-torn",
                 "chaotic and unstable",
                 "industrial",
-              ].map((atmosphere) => (
-                <option key={atmosphere} value={atmosphere}>
-                  {atmosphere}
-                </option>
-              ))}
-            </select>
-          </div>
-
-          {/* Inhabitants */}
-          <div>
-            <label
-              htmlFor="inhabitants"
-              className="block text-sm font-medium text-white"
-            >
-              Inhabitants
-            </label>
-            <select
-              id="inhabitants"
-              name="inhabitants"
-              value={formData.inhabitants}
-              onChange={handleChange}
-              className="block w-full mt-1 h-12 rounded-md bg-gray-800 border-gray-600 text-white focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm px-3"
-            >
-              <option value="">Select inhabitants</option>
-              {[
+              ],
+            },
+            {
+              id: "inhabitants",
+              label: "Inhabitants",
+              options: [
                 "no inhabitants",
                 "abandoned",
                 "humans",
@@ -221,31 +172,12 @@ export default function LocationForm({ onBack }) {
                 "monsters",
                 "fey",
                 "intelligent constructs",
-              ].map((inhabitants) => (
-                <option key={inhabitants} value={inhabitants}>
-                  {inhabitants}
-                </option>
-              ))}
-            </select>
-          </div>
-
-          {/* Climate */}
-          <div>
-            <label
-              htmlFor="climate"
-              className="block text-sm font-medium text-white"
-            >
-              Climate
-            </label>
-            <select
-              id="climate"
-              name="climate"
-              value={formData.climate}
-              onChange={handleChange}
-              className="block w-full mt-1 h-12 rounded-md bg-gray-800 border-gray-600 text-white focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm px-3"
-            >
-              <option value="">Select climate</option>
-              {[
+              ],
+            },
+            {
+              id: "climate",
+              label: "Climate",
+              options: [
                 "temperate",
                 "tropical",
                 "arid",
@@ -255,31 +187,12 @@ export default function LocationForm({ onBack }) {
                 "eternal night",
                 "high altitude",
                 "subterranean",
-              ].map((climate) => (
-                <option key={climate} value={climate}>
-                  {climate}
-                </option>
-              ))}
-            </select>
-          </div>
-
-          {/* Danger Level */}
-          <div>
-            <label
-              htmlFor="dangerLevel"
-              className="block text-sm font-medium text-white"
-            >
-              Danger Level
-            </label>
-            <select
-              id="dangerLevel"
-              name="dangerLevel"
-              value={formData.dangerLevel}
-              onChange={handleChange}
-              className="block w-full mt-1 h-12 rounded-md bg-gray-800 border-gray-600 text-white focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm px-3"
-            >
-              <option value="">Select a danger level</option>
-              {[
+              ],
+            },
+            {
+              id: "dangerLevel",
+              label: "Danger Level",
+              options: [
                 "completely safe",
                 "low",
                 "moderate",
@@ -289,13 +202,36 @@ export default function LocationForm({ onBack }) {
                 "cursed/corrupted",
                 "eldritch horrors",
                 "divine retribution",
-              ].map((dangerLevel) => (
-                <option key={dangerLevel} value={dangerLevel}>
-                  {dangerLevel}
-                </option>
-              ))}
-            </select>
-          </div>
+              ],
+            },
+          ].map(({ id, label, options }) => (
+            <div key={id}>
+              <label
+                htmlFor={id}
+                className="block text-sm font-medium text-white"
+              >
+                {label}
+              </label>
+              <select
+                id={id}
+                name={id}
+                value={formData[id]}
+                onChange={handleChange}
+                className={`block w-full mt-1 h-12 rounded-md bg-gray-800 text-white focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm px-3 ${
+                  missingFields.includes(id)
+                    ? "border-2 border-red-500"
+                    : "border-gray-600"
+                }`}
+              >
+                <option value="">Select {label.toLowerCase()}</option>
+                {options.map((option) => (
+                  <option key={option} value={option}>
+                    {option}
+                  </option>
+                ))}
+              </select>
+            </div>
+          ))}
         </div>
       </div>
 
@@ -371,7 +307,7 @@ export default function LocationForm({ onBack }) {
         <button
           type="submit"
           className="px-4 py-2 text-sm font-medium text-white bg-indigo-600 rounded-md hover:bg-indigo-500"
-          disabled={loading} // Disable button while loading
+          disabled={loading}
         >
           {loading ? "Submitting..." : "Submit"}
         </button>
