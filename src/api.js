@@ -193,8 +193,8 @@ export async function getAssetByID(user, uuid) {
 
     const data = await response.json();
     if (isDebug) {
-      console.log("API Response:", data);
-    } // Debug response
+      console.log("Fetched Asset Data:", data);
+    }
 
     if (!response.ok) {
       throw new Error(`API Error: ${response.status}`);
@@ -222,17 +222,54 @@ export async function updatePrismaUserInfo(user, newInfo) {
  * Description: Sends a PATCH request to update a user information
  ****************************************************************/
 
-export async function updatePrismaAssetInfo(user, newInfo) {
-  console.log("Update Asset Request Sent ");
-  return;
+export async function updatePrismaAssetInfo(user, uuid, updatedData) {
+  if (!user?.id_token) {
+    throw new Error("User authentication token is missing");
+  }
+
+  if (!uuid) {
+    throw new Error("Asset UUID is missing");
+  }
+
+  if (isDebug) {
+    console.log(`updatePrismaAssetInfo: Fetching Asset with UUID: ${uuid}...`);
+  }
+
+  try {
+    console.log("Calling PATCH request...");
+    const response = await fetch(`${apiUrl}/v1/assets/${uuid}`, {
+      method: "PATCH",
+      headers: {
+        Authorization: `Bearer ${user.id_token}`,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify(updatedData),
+    });
+
+    const patchedData = await response.json();
+
+    if (!response.ok) {
+      throw new Error(`API Error: ${response.status}`);
+    }
+
+    if (isDebug) {
+      console.log("Asset updated successfully:", patchedData);
+    } else {
+      console.log("Asset updated successfully");
+    }
+    return patchedData;
+  } catch (error) {
+    console.error("Error fetching or updating asset:", error);
+    throw error;
+  }
 }
 
 /***************************************************************
- * Function: deletePrismaAssetInfo
+ * Function: deletePrismaAsset
  * Description: Sends a DELETE request to update a user information
  ****************************************************************/
 
-export async function deletePrismaAssetInfo(user, newInfo) {
+export async function deletePrismaAsset(user, newInfo) {
   console.log("DELETE Asset Request Sent ");
   return;
 }

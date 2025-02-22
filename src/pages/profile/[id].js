@@ -23,7 +23,6 @@ function AssetDetails() {
       try {
         console.log("Fetching asset details for ID:", id);
         const response = await getAssetByID(auth.user, id);
-        console.log("Fetched Asset Data:", response.data);
 
         setAsset(response.data.asset);
       } catch (err) {
@@ -61,7 +60,13 @@ function AssetDetails() {
     );
   }
 
-  return <AssetDetailsCard asset={asset} onBack={() => router.back()} />;
+  return (
+    <AssetDetailsCard
+      user={auth.user}
+      asset={asset}
+      onBack={() => router.back()}
+    />
+  );
 }
 
 export default AssetDetails;

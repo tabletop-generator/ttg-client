@@ -1,9 +1,13 @@
-import { deletePrismaAssetInfo, updatePrismaAssetInfo } from "@/api";
+import { deletePrismaAsset, updatePrismaAssetInfo } from "@/api";
+import { useAuth } from "react-oidc-context";
+
 import { Edit, Heart, Trash } from "lucide-react";
 import { useState } from "react";
 export default function AssetDetailsCard({ asset, onBack }) {
+  const auth = useAuth();
+  const user = auth.user;
   const [likes, setLikes] = useState(asset?.likes || 0); // Fake likes
-  const [isPublic, setIsPublic] = useState(asset?.isFeatured); // Public/Private
+  const [isPublic, setIsPublic] = useState(asset?.isPublic ?? false);
   const [name, setName] = useState(asset?.name || "Unnamed"); // Name
   const [description, setDescription] = useState(
     asset?.description || "No backstory available.",
@@ -17,7 +21,7 @@ export default function AssetDetailsCard({ asset, onBack }) {
   const handleDelete = async () => {
     if (confirm("Are you sure you want to delete this asset?")) {
       try {
-        await deletePrismaAssetInfo(asset.id);
+        await deletePrismaAsset(asset.id);
 
         onBack(); // Navigate back after deletion
 
@@ -32,19 +36,31 @@ export default function AssetDetailsCard({ asset, onBack }) {
       }
     }
   };
+  const handleToggleVisibility = (value) => {
+    setIsPublic(value);
+    console.log("Visibility set to:", value ? "public" : "private");
+  };
 
   const handleSave = async () => {
+    // Prepare the updated data
+    const newInfo = {
+      name,
+      description,
+      visibility: isPublic ? "public" : "private",
+    };
+
+    console.log("New info being sent to API:", newInfo);
+
     try {
-      await updatePrismaAssetInfo({
-        id: asset.id,
-        name,
-        description,
-        isPublic,
-      });
+      // Make the API call
+      await updatePrismaAssetInfo(user, asset.uuid, newInfo);
+
       console.log("Asset updated successfully!");
+      asset.isPublic = isPublic;
+      // Only exit editing mode after a successful update
       setIsEditing(false);
     } catch (error) {
-      console.error("Failed to update asset:", error);
+      console.error("Error updating asset:", error);
     }
   };
 
@@ -52,7 +68,7 @@ export default function AssetDetailsCard({ asset, onBack }) {
     // Revert to original values
     setName(asset?.name || "Unnamed");
     setDescription(asset?.description || "No backstory available.");
-    setIsPublic(asset?.isPublic || true);
+    setIsPublic(asset?.isPublic ?? false);
     setIsEditing(false);
   };
 
@@ -134,7 +150,7 @@ export default function AssetDetailsCard({ asset, onBack }) {
         {isEditing && (
           <div className="flex justify-center mt-6 space-x-4">
             <button
-              onClick={() => setIsPublic(true)}
+              onClick={() => handleToggleVisibility(true)}
               className={`px-4 py-2 rounded-md ${
                 isPublic ? "bg-gray-400 text-black" : "bg-gray-600 text-white"
               }`}
@@ -142,7 +158,7 @@ export default function AssetDetailsCard({ asset, onBack }) {
               Public
             </button>
             <button
-              onClick={() => setIsPublic(false)}
+              onClick={() => handleToggleVisibility(false)}
               className={`px-4 py-2 rounded-md ${
                 !isPublic ? "bg-gray-400 text-black" : "bg-gray-600 text-white"
               }`}
