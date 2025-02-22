@@ -28,8 +28,6 @@ export default function CharacterForm({ onBack }) {
   const [error, setError] = useState(null); // Updated when things go wrong, used to prevent submission and tell user about errors
   const [missingFields, setMissingFields] = useState([]); // Tracks which required fields are missing
 
-  //TODO: Add visual cues for common errors, like required fields being empty
-
   // Remove default HTML functionality and use state to control forms instead
   const handleChange = (e) => {
     const { name, value } = e.target;

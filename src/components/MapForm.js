@@ -1,5 +1,8 @@
+import { getAssetImage } from "@/api";
 import GeneratedAsset from "@/components/GeneratedAsset";
+import logger from "@/utils/logger";
 import { useState } from "react";
+import { useAuth } from "react-oidc-context";
 
 export default function MapForm({ onBack }) {
   // Initialize form state with all fields, including a unique ID
@@ -82,17 +85,26 @@ export default function MapForm({ onBack }) {
     setFormData((prev) => ({ ...prev, [name]: value }));
   };
 
+  const auth = useAuth();
+
   const handleSubmit = async (e) => {
     e.preventDefault();
     setLoading(true);
     setError(null);
     setMissingFields([]);
 
-    // Required fields, now including terrain
+    if (!auth.isAuthenticated || !auth.user?.id_token) {
+      const authError = "You must be logged in to perform this action.";
+      setError(authError);
+      logger.error(authError);
+      setLoading(false);
+      return;
+    }
+
+    // Ensure required fields are filled
     const requiredFields = ["type", "style", "scale", "terrain"];
     const emptyFields = requiredFields.filter((field) => !formData[field]);
 
-    // If there are missing fields, update state and prevent submission
     if (emptyFields.length > 0) {
       setError(`You must select: ${emptyFields.join(", ")}.`);
       setMissingFields(emptyFields);
@@ -101,33 +113,58 @@ export default function MapForm({ onBack }) {
     }
 
     try {
-      console.log("Form data submitted:", formData);
+      // Remove empty fields from request
+      const sanitizedData = Object.fromEntries(
+        Object.entries(formData).filter(([_, value]) => value.trim() !== ""),
+      );
+      logger.info("Sanitized form data:", sanitizedData);
 
-      // Simulated API response (replace with actual API call)
-      const response = {
-        id: "placeholder-id",
-        name: formData.name || "Generated Map",
-        type: formData.type,
-        style: formData.style,
-        scale: formData.scale,
-        terrain: formData.terrain,
-        poi: formData.poi,
+      // Format request body
+      const requestBody = {
+        name: sanitizedData.name || "Untitled Map",
+        type: "map",
+        visibility: "public",
+        data: {
+          type: sanitizedData.type,
+          style: sanitizedData.style,
+          scale: sanitizedData.scale,
+          terrain: sanitizedData.terrain,
+          orientation: sanitizedData.orientation || "",
+          poi: sanitizedData.poi || "",
+        },
       };
 
-      setGeneratedResult(response);
-      setIsSubmitted(true); // This will now trigger a component re-render
+      logger.debug("Final request payload:", requestBody);
+
+      // API call
+      const response = await getAssetImage(auth.user, requestBody, "map");
+      logger.info("API Response:", response);
+
+      // Store response for rendering in GeneratedAsset
+      setGeneratedResult({
+        id: response?.asset?.id,
+        name: response?.asset?.name,
+        imageUrl: response?.asset?.imageUrl,
+        visibility: response?.asset?.visibility,
+        description: response?.asset?.description,
+      });
+
+      setIsSubmitted(true);
     } catch (err) {
-      setError("An error occurred. Please try again.");
+      const submissionError = "Failed to generate the map. Please try again.";
+      setError(submissionError);
+      logger.error(submissionError, err.message);
     } finally {
       setLoading(false);
+      logger.info("Form submission process complete.");
     }
   };
 
-  if (isSubmitted) {
+  if (generatedResult && generatedResult.id && generatedResult.imageUrl) {
     return (
       <GeneratedAsset
-        onBack={() => setIsSubmitted(false)}
-        data={{ id: "maps", ...formData, generated: generatedResult }}
+        data={generatedResult}
+        onBack={() => setGeneratedResult(null)}
       />
     );
   }
