@@ -26,6 +26,8 @@ export default function CharacterForm({ onBack }) {
   const [loading, setLoading] = useState(false); // Prevent further submissions while waiting for api return
   const [generatedResult, setGeneratedResult] = useState(null); // Store what we get back from the api
   const [error, setError] = useState(null); // Updated when things go wrong, used to prevent submission and tell user about errors
+  const [missingFields, setMissingFields] = useState([]); // Tracks which required fields are missing
+
   //TODO: Add visual cues for common errors, like required fields being empty
 
   // Remove default HTML functionality and use state to control forms instead
@@ -58,20 +60,20 @@ export default function CharacterForm({ onBack }) {
 
       // Make sure required fields arne't empty
       const requiredFields = ["name", "race", "class", "gender"];
-      const missingFields = requiredFields.filter(
+      const emptyFields = requiredFields.filter(
         (field) => !sanitizedData[field],
       );
 
-      if (missingFields.length > 0) {
-        const missingError = `Missing required fields: ${missingFields.join(
-          ", ",
-        )}`;
+      if (emptyFields.length > 0) {
+        setMissingFields(emptyFields); // Store missing fields in state
+        const missingError = `Missing required fields: ${emptyFields.join(", ")}`;
         setError(missingError);
         logger.error(missingError);
         setLoading(false);
         return;
+      } else {
+        setMissingFields([]); // Reset missing fields if all required fields are filled
       }
-
       // DEBUG: see everything we're sending in the api call
       logger.debug("Complete form data to send:", formData);
 
@@ -120,6 +122,7 @@ export default function CharacterForm({ onBack }) {
     <form onSubmit={handleSubmit} className="space-y-8">
       <div className="space-y-6">
         <h2 className="text-lg font-semibold text-white">Create Character</h2>
+        {error && <p className="text-red-500 font-bold">{error}</p>}
 
         {/* Name Field */}
         <div>
@@ -135,7 +138,11 @@ export default function CharacterForm({ onBack }) {
             name="name"
             value={formData.name}
             onChange={handleChange}
-            className="block w-full mt-1 h-12 rounded-md bg-gray-800 border-gray-600 text-white placeholder:text-gray-400 px-3 focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
+            className={`block w-full mt-1 h-12 rounded-md bg-gray-800 text-white placeholder:text-gray-400 px-3 focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm ${
+              missingFields.includes("name")
+                ? "border-2 border-red-500"
+                : "border-gray-600"
+            }`}
             placeholder="Enter character name"
           />
         </div>
@@ -155,7 +162,11 @@ export default function CharacterForm({ onBack }) {
               name="race"
               value={formData.race}
               onChange={handleChange}
-              className="block w-full mt-1 h-12 rounded-md bg-gray-800 border-gray-600 text-white placeholder:text-gray-400 placeholder:pt-2 placeholder:pl-3 focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm px-3"
+              className={`block w-full mt-1 h-12 rounded-md bg-gray-800 text-white placeholder:text-gray-400 placeholder:pt-2 placeholder:pl-3 focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm px-3 ${
+                missingFields.includes("race")
+                  ? "border-2 border-red-500"
+                  : "border-gray-600"
+              }`}
             >
               <option value="">Select a race</option>
               {[
@@ -193,7 +204,11 @@ export default function CharacterForm({ onBack }) {
               name="class"
               value={formData.class}
               onChange={handleChange}
-              className="block w-full mt-1 h-12 rounded-md bg-gray-800 border-gray-600 text-white placeholder:text-gray-400 placeholder:pt-2 placeholder:pl-3 focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm px-3"
+              className={`block w-full mt-1 h-12 rounded-md bg-gray-800 text-white placeholder:text-gray-400 placeholder:pt-2 placeholder:pl-3 focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm px-3 ${
+                missingFields.includes("class")
+                  ? "border-2 border-red-500"
+                  : "border-gray-600"
+              }`}
             >
               <option value="">Select a class</option>
               {[
@@ -232,7 +247,11 @@ export default function CharacterForm({ onBack }) {
               name="gender"
               value={formData.gender}
               onChange={handleChange}
-              className="block w-full mt-1 h-12 rounded-md bg-gray-800 border-gray-600 text-white placeholder:text-gray-400 placeholder:pt-2 placeholder:pl-3 focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm px-3"
+              className={`block w-full mt-1 h-12 rounded-md bg-gray-800 text-white placeholder:text-gray-400 placeholder:pt-2 placeholder:pl-3 focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm px-3 ${
+                missingFields.includes("gender")
+                  ? "border-2 border-red-500"
+                  : "border-gray-600"
+              }`}
             >
               <option value="">Select a gender</option>
               {["male", "female", "non_binary", "genderfluid", "agender"].map(
