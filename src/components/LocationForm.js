@@ -48,7 +48,7 @@ export default function LocationForm({ onBack }) {
     const emptyFields = requiredFields.filter((field) => !formData[field]);
 
     if (emptyFields.length > 0) {
-      setError(`You must select: ${emptyFields.join(", ")}.`);
+      setError(`You must select a ${emptyFields.join(", ")}.`);
       setMissingFields(emptyFields);
       setLoading(false);
       return;

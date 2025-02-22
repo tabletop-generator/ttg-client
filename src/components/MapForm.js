@@ -1,6 +1,5 @@
 import GeneratedAsset from "@/components/GeneratedAsset";
 import { useState } from "react";
-import Select from "react-select";
 
 export default function MapForm({ onBack }) {
   // Initialize form state with all fields, including a unique ID
@@ -10,7 +9,7 @@ export default function MapForm({ onBack }) {
     class: "",
     style: "",
     scale: "",
-    terrain: [], // Multi-select for terrain options
+    terrain: "",
     orientation: "",
     poi: "",
   });
@@ -20,23 +19,6 @@ export default function MapForm({ onBack }) {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
   const [missingFields, setMissingFields] = useState([]); // Tracks which required fields are missing
-
-  // Options for the Terrain Multi-Select
-  // Options for the Terrain Multi-Select
-  const terrainOptions = [
-    { value: "rivers/lakes", label: "Rivers/Lakes" },
-    {
-      value: "cliffs and elevation changes",
-      label: "Cliffs and Elevation Changes",
-    },
-    { value: "bridges", label: "Bridges" },
-    { value: "roads", label: "Roads" },
-    { value: "lava pools", label: "Lava Pools" },
-    { value: "hidden paths", label: "Hidden Paths" },
-    { value: "tunnels", label: "Tunnels" },
-    { value: "fortifications", label: "Fortifications" },
-    { value: "ruins", label: "Ruins" },
-  ];
 
   // Custom styles for Terrain Multi-Select
   const customStyles = {
@@ -100,23 +82,14 @@ export default function MapForm({ onBack }) {
     setFormData((prev) => ({ ...prev, [name]: value }));
   };
 
-  const handleTerrainChange = (selectedOptions) => {
-    if (selectedOptions.length > 3) return; // Prevent selection beyond 3
-
-    setFormData((prev) => ({
-      ...prev,
-      terrain: selectedOptions.map((option) => option.value),
-    }));
-  };
-
   const handleSubmit = async (e) => {
     e.preventDefault();
     setLoading(true);
     setError(null);
     setMissingFields([]);
 
-    // Required fields (excluding terrain)
-    const requiredFields = ["type", "style", "scale"];
+    // Required fields, now including terrain
+    const requiredFields = ["type", "style", "scale", "terrain"];
     const emptyFields = requiredFields.filter((field) => !formData[field]);
 
     // If there are missing fields, update state and prevent submission
@@ -297,7 +270,7 @@ export default function MapForm({ onBack }) {
               ))}
             </select>
           </div>
-          {/* Terrain (Multi-Select) */}
+          {/* Terrain Dropdown */}
           <div>
             <label
               htmlFor="terrain"
@@ -305,17 +278,34 @@ export default function MapForm({ onBack }) {
             >
               Terrain
             </label>
-            <Select
+            <select
               id="terrain"
-              isMulti
-              options={terrainOptions}
-              value={terrainOptions.filter((option) =>
-                formData.terrain.includes(option.value),
-              )}
-              onChange={handleTerrainChange}
-              styles={customStyles}
-              placeholder="Select terrains"
-            />
+              name="terrain"
+              value={formData.terrain}
+              onChange={handleChange}
+              className={`block w-full mt-1 h-12 rounded-md bg-gray-800 text-white focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm px-3 ${
+                missingFields.includes("terrain")
+                  ? "border-2 border-red-500"
+                  : "border-gray-600"
+              }`}
+            >
+              <option value="">Select a terrain</option>
+              {[
+                "rivers/lakes",
+                "cliffs and elevation changes",
+                "bridges",
+                "roads",
+                "lava pools",
+                "hidden paths",
+                "tunnels",
+                "fortifications",
+                "ruins",
+              ].map((terrain) => (
+                <option key={terrain} value={terrain}>
+                  {terrain.charAt(0).toUpperCase() + terrain.slice(1)}
+                </option>
+              ))}
+            </select>
           </div>
 
           {/* POI */}
