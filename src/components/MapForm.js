@@ -19,6 +19,7 @@ export default function MapForm({ onBack }) {
   const [generatedResult, setGeneratedResult] = useState(null); // Placeholder for API response
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
+  const [missingFields, setMissingFields] = useState([]); // Tracks which required fields are missing
 
   // Options for the Terrain Multi-Select
   // Options for the Terrain Multi-Select
@@ -100,11 +101,11 @@ export default function MapForm({ onBack }) {
   };
 
   const handleTerrainChange = (selectedOptions) => {
+    if (selectedOptions.length > 3) return; // Prevent selection beyond 3
+
     setFormData((prev) => ({
       ...prev,
-      terrain: selectedOptions
-        ? selectedOptions.map((option) => option.value)
-        : [],
+      terrain: selectedOptions.map((option) => option.value),
     }));
   };
 
@@ -112,16 +113,36 @@ export default function MapForm({ onBack }) {
     e.preventDefault();
     setLoading(true);
     setError(null);
+    setMissingFields([]);
+
+    // Required fields (excluding terrain)
+    const requiredFields = ["type", "style", "scale"];
+    const emptyFields = requiredFields.filter((field) => !formData[field]);
+
+    // If there are missing fields, update state and prevent submission
+    if (emptyFields.length > 0) {
+      setError(`You must select: ${emptyFields.join(", ")}.`);
+      setMissingFields(emptyFields);
+      setLoading(false);
+      return;
+    }
 
     try {
       console.log("Form data submitted:", formData);
 
+      // Simulated API response (replace with actual API call)
       const response = {
-        // Simulated API response (replace with actual API call)
+        id: "placeholder-id",
+        name: formData.name || "Generated Map",
+        type: formData.type,
+        style: formData.style,
+        scale: formData.scale,
+        terrain: formData.terrain,
+        poi: formData.poi,
       };
 
       setGeneratedResult(response);
-      setIsSubmitted(true);
+      setIsSubmitted(true); // This will now trigger a component re-render
     } catch (err) {
       setError("An error occurred. Please try again.");
     } finally {
@@ -177,7 +198,11 @@ export default function MapForm({ onBack }) {
               name="type"
               value={formData.type}
               onChange={handleChange}
-              className="block w-full mt-1 h-12 rounded-md bg-gray-800 border-gray-600 text-white focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm px-3"
+              className={`block w-full mt-1 h-12 rounded-md bg-gray-800 text-white focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm px-3 ${
+                missingFields.includes("type")
+                  ? "border-2 border-red-500"
+                  : "border-gray-600"
+              }`}
             >
               <option value="">Select a type</option>
               {[
@@ -224,7 +249,11 @@ export default function MapForm({ onBack }) {
               name="style"
               value={formData.style}
               onChange={handleChange}
-              className="block w-full mt-1 h-12 rounded-md bg-gray-800 border-gray-600 text-white focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm px-3"
+              className={`block w-full mt-1 h-12 rounded-md bg-gray-800 text-white focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm px-3 ${
+                missingFields.includes("style")
+                  ? "border-2 border-red-500"
+                  : "border-gray-600"
+              }`}
             >
               <option value="">Select a style</option>
               {[
@@ -254,7 +283,11 @@ export default function MapForm({ onBack }) {
               name="scale"
               value={formData.scale}
               onChange={handleChange}
-              className="block w-full mt-1 h-12 rounded-md bg-gray-800 border-gray-600 text-white focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm px-3"
+              className={`block w-full mt-1 h-12 rounded-md bg-gray-800 text-white focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm px-3 ${
+                missingFields.includes("scale")
+                  ? "border-2 border-red-500"
+                  : "border-gray-600"
+              }`}
             >
               <option value="">Select a scale</option>
               {["small", "medium", "large"].map((scale) => (
@@ -264,7 +297,6 @@ export default function MapForm({ onBack }) {
               ))}
             </select>
           </div>
-
           {/* Terrain (Multi-Select) */}
           <div>
             <label
