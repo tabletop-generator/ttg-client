@@ -1,9 +1,13 @@
 // src/components/CharacterForm.js
 
-import GeneratedAsset from "@/components/GeneratedAsset";
+import { getAssetImage } from "@/api";
+import logger from "@/utils/logger";
 import { useState } from "react";
+import { useAuth } from "react-oidc-context";
+import GeneratedAsset from "./GeneratedAsset";
 
 export default function LocationForm({ onBack }) {
+  const auth = useAuth();
   const [formData, setFormData] = useState({
     name: "",
     type: "",
@@ -36,7 +40,15 @@ export default function LocationForm({ onBack }) {
     setError(null);
     setMissingFields([]);
 
-    // Required dropdown fields check
+    if (!auth.isAuthenticated || !auth.user?.id_token) {
+      const authError = "You must be logged in to perform this action.";
+      setError(authError);
+      logger.error(authError);
+      setLoading(false);
+      return;
+    }
+
+    // Ensure required fields are filled
     const requiredFields = [
       "type",
       "terrain",
@@ -55,18 +67,51 @@ export default function LocationForm({ onBack }) {
     }
 
     try {
-      console.log("Form data submitted:", formData);
+      // Remove empty fields from request
+      const sanitizedData = Object.fromEntries(
+        Object.entries(formData).filter(([_, value]) => value.trim() !== ""),
+      );
+      logger.info("Sanitized form data:", sanitizedData);
 
-      const response = {
-        // API call to generate will go here
+      // Format request body according to the required structure
+      const requestBody = {
+        name: sanitizedData.name,
+        type: "location",
+        visibility: "public",
+        data: {
+          type: sanitizedData.type,
+          terrain: sanitizedData.terrain,
+          climate: sanitizedData.climate,
+          atmosphere: sanitizedData.atmosphere,
+          inhabitants: sanitizedData.inhabitants,
+          dangerLevel: sanitizedData.dangerLevel,
+          pointsOfInterest: sanitizedData.pointsOfInterest || "",
+          narrativeRole: sanitizedData.narrativeRole || "",
+          customDescription: sanitizedData.customDescription || "",
+        },
       };
 
-      setGeneratedResult(response);
-      setIsSubmitted(true);
+      logger.debug("Final request payload:", requestBody);
+
+      // API call
+      const response = await getAssetImage(auth.user, requestBody, "location");
+      logger.info("API Response:", response);
+
+      setGeneratedResult({
+        id: response?.asset?.id,
+        name: response?.asset?.name,
+        imageUrl: response?.asset?.imageUrl,
+        visibility: response?.asset?.visibility,
+        description: response?.asset?.description,
+      });
     } catch (err) {
-      setError("An error occurred. Please try again.");
+      const submissionError =
+        "Failed to generate the location. Please try again.";
+      setError(submissionError);
+      logger.error(submissionError, err.message);
     } finally {
       setLoading(false);
+      logger.info("Form submission process complete.");
     }
   };
 
