@@ -32,11 +32,15 @@ export async function getAssetImage(user, assetData, assetType) {
       Authorization: token,
     };
 
+    // Extract "name" from assetData and ensure it's at the top level
+    const { name, ...data } = assetData;
+
     // Construct the request body in the expected order
     const requestBody = {
-      type: assetType, // Ensures "type" is first
-      visibility: "public", // Ensures "visibility" is second
-      data: { ...assetData }, // Ensures "data" is last
+      name, // Ensure "name" is at the top level
+      type: assetType, // Ensures "type" is next
+      visibility: "public", // Ensures "visibility" follows
+      data, // "data" now excludes "name"
     };
 
     // Log the request details

@@ -83,7 +83,14 @@ export default function CharacterForm({ onBack }) {
       ); // ***Specify what type of asset are we generating e.g ["character", "quest", "quest", "map"]
       logger.info("API Response:", response);
 
-      setGeneratedResult(response);
+      // updated for API version 2
+      setGeneratedResult({
+        id: response?.asset?.id,
+        name: response?.asset?.name,
+        imageUrl: response?.asset?.imageUrl,
+        visibility: response?.asset?.visibility,
+        description: response?.asset?.description,
+      });
     } catch (err) {
       const submissionError =
         "Failed to generate the character. Please try again.";
