@@ -5,7 +5,7 @@
   "scripts": {
     "dev": "next dev",
     "build": "next build",
-    "start:static": "serve out",
+    "serve": "serve out",
     "prettier": "prettier --write .",
     "lint": "next lint",
     "prepare": "husky"
