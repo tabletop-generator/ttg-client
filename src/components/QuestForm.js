@@ -15,12 +15,12 @@ export default function QuestForm({ onBack }) {
     complexity: "",
     objective: "",
     antagonist: "",
-    notable_npcs: "",
-    combat: false,
-    puzzles: false,
-    skill_challenges: false,
-    dilemmas: false,
-    custom_description: "",
+    notableNpcs: "",
+    hasCombat: false,
+    hasPuzzles: false,
+    hasSkillChallenges: false,
+    hasDilemmas: false,
+    customDescription: "",
   });
 
   const [loading, setLoading] = useState(false);
@@ -104,31 +104,21 @@ export default function QuestForm({ onBack }) {
     try {
       logger.info("Submitting quest form data:", formData);
 
-      const requestBody = {
-        name: formData.name || "Untitled Quest",
-        type: "quest",
-        visibility: "unlisted",
-        data: {
-          type: formData.type,
-          tone: formData.tone,
-          location: formData.location,
-          complexity: formData.complexity,
-          objective: formData.objective,
-          antagonist: formData.antagonist,
-          notableNpcs: formData.notable_npcs,
-          hasCombat: formData.combat,
-          hasPuzzles: formData.puzzles,
-          hasSkillChallenges: formData.skill_challenges,
-          hasDilemmas: formData.dilemmas,
-          customDescription: formData.custom_description,
-        },
-      };
+      // Sanitize the data (remove empty fields)
+      const sanitizedData = Object.fromEntries(
+        Object.entries(formData).filter(
+          ([_, val]) => val && val.toString().trim() !== "",
+        ),
+      );
 
-      logger.info("Final API request payload:", requestBody);
+      logger.debug("Sanitized quest data:", sanitizedData);
+      console.log("Sanitized quest data:", sanitizedData);
 
-      const response = await getAssetImage(auth.user, requestBody, "quest");
+      // Let getAssetImage handle nesting:
+      const response = await getAssetImage(auth.user, sanitizedData, "quest");
       logger.info("API Response:", response);
 
+      // Set the result
       setGeneratedResult({
         id: response?.asset?.id,
         name: response?.asset?.name,
@@ -221,10 +211,10 @@ export default function QuestForm({ onBack }) {
         {/* Binary Selections (Checkboxes) */}
         <div className="grid grid-cols-2 gap-4">
           {[
-            { id: "combat", label: "Combat Encounters" },
-            { id: "puzzles", label: "Puzzles/Riddles" },
-            { id: "skill_challenges", label: "Skill Challenges" },
-            { id: "dilemmas", label: "Moral Dilemmas" },
+            { id: "hasCombat", label: "Combat Encounters" },
+            { id: "hasPuzzles", label: "Puzzles/Riddles" },
+            { id: "hasSkillChallenges", label: "Skill Challenges" },
+            { id: "hasDilemmas", label: "Moral Dilemmas" },
           ].map(({ id, label }) => (
             <div key={id} className="flex items-center">
               <input
@@ -247,8 +237,8 @@ export default function QuestForm({ onBack }) {
           { id: "location", label: "Location" },
           { id: "objective", label: "Objective" },
           { id: "antagonist", label: "Antagonist" },
-          { id: "notable_npcs", label: "Notable NPCs" },
-          { id: "custom_description", label: "Custom Description" },
+          { id: "notableNpcs", label: "Notable NPCs" },
+          { id: "customDescription", label: "Custom Description" },
         ].map(({ id, label }) => (
           <div key={id}>
             <label
