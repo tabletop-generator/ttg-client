@@ -43,8 +43,18 @@ export async function getAssetImage(user, assetData, assetType) {
       data, // "data" now excludes "name"
     };
 
+    console.log("Sending Request:", JSON.stringify(requestBody, null, 2));
+
     // Log the request details
-    logger.info("Sending API Request:", {
+    logger.debug("Sending API Request:", {
+      url: `${apiUrl}/v1/assets`,
+      method: "POST",
+      headers,
+      body: JSON.stringify(requestBody), // Logs the serialized JSON
+    });
+
+    // Extra debugging log
+    console.log("Sending API Request:", {
       url: `${apiUrl}/v1/assets`,
       method: "POST",
       headers,
