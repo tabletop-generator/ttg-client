@@ -10,11 +10,10 @@ export default function MapForm({ onBack }) {
     name: "",
     type: "",
     class: "",
-    style: "",
     scale: "",
     terrain: "",
     orientation: "",
-    poi: "",
+    pointsOfInterest: "",
   });
 
   const [isSubmitted, setIsSubmitted] = useState(false);
@@ -102,7 +101,7 @@ export default function MapForm({ onBack }) {
     }
 
     // Ensure required fields are filled
-    const requiredFields = ["type", "style", "scale", "terrain"];
+    const requiredFields = ["type", "scale", "terrain"];
     const emptyFields = requiredFields.filter((field) => !formData[field]);
 
     if (emptyFields.length > 0) {
@@ -119,25 +118,24 @@ export default function MapForm({ onBack }) {
       );
       logger.info("Sanitized form data:", sanitizedData);
 
-      // Format request body
-      const requestBody = {
-        name: sanitizedData.name || "Untitled Map",
-        type: "map",
-        visibility: "public",
-        data: {
-          type: sanitizedData.type,
-          style: sanitizedData.style,
-          scale: sanitizedData.scale,
-          terrain: sanitizedData.terrain,
-          orientation: sanitizedData.orientation || "",
-          poi: sanitizedData.poi || "",
-        },
-      };
+      //Format request body
+      // const requestBody = {
+      //   // name: sanitizedData.name || "Untitled Map",
+      //   // type: "map",
+      //   // visibility: "public",
+      //   type: sanitizedData.type,
+      //   style: sanitizedData.style,
+      //   scale: sanitizedData.scale,
+      //   terrain: sanitizedData.terrain,
+      //   orientation: sanitizedData.orientation || "",
+      //   pointsOfInterest: sanitizedData.pointsOfInterest || "",
+      // };
 
-      logger.debug("Final request payload:", requestBody);
+      // logger.debug("Final request payload:", requestBody);
+      // console.log("Final request payload:", requestBody);
 
       // API call
-      const response = await getAssetImage(auth.user, requestBody, "map");
+      const response = await getAssetImage(auth.user, sanitizedData, "map");
       logger.info("API Response:", response);
 
       // Store response for rendering in GeneratedAsset
@@ -247,7 +245,7 @@ export default function MapForm({ onBack }) {
           </div>
 
           {/* Style */}
-          <div>
+          {/* <div>
             <label
               htmlFor="style"
               className="block text-sm font-medium text-white"
@@ -278,7 +276,7 @@ export default function MapForm({ onBack }) {
                 </option>
               ))}
             </select>
-          </div>
+          </div> */}
 
           {/* Scale */}
           <div>
@@ -345,22 +343,22 @@ export default function MapForm({ onBack }) {
             </select>
           </div>
 
-          {/* POI */}
+          {/* pointsOfInterest */}
           <div>
             <label
-              htmlFor="poi"
+              htmlFor="pointsOfInterest"
               className="block text-sm font-medium text-white"
             >
               Points of Interest
             </label>
             <textarea
-              id="poi"
-              name="poi"
+              id="pointsOfInterest"
+              name="pointsOfInterest"
               rows={3}
-              value={formData.poi}
+              value={formData.pointsOfInterest}
               onChange={handleChange}
               className="block w-full mt-1 rounded-md bg-gray-800 border-gray-600 text-white placeholder:text-gray-400 focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
-              placeholder="Enter POI here"
+              placeholder="Enter pointsOfInterest here"
             />
           </div>
         </div>

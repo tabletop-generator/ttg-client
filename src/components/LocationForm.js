@@ -1,4 +1,4 @@
-// src/components/CharacterForm.js
+// src/components/LocationForm.js
 
 import { getAssetImage } from "@/api";
 import logger from "@/utils/logger";
@@ -18,28 +18,31 @@ export default function LocationForm({ onBack }) {
     climate: "",
     dangerLevel: "",
     lore: "",
-    pointsOfInterest: "", // Added for points of interest
-    narrativeRole: "", // Added for narrative role
-    customDescription: "", // Added for custom description
+    pointsOfInterest: "",
+    narrativeRole: "",
+    customDescription: "",
   });
 
-  const [isSubmitted, setIsSubmitted] = useState(false); // Tracks if the form is submitted
-  const [generatedResult, setGeneratedResult] = useState(null); // Placeholder for API response
-  const [loading, setLoading] = useState(false); // Tracks loading state
-  const [error, setError] = useState(null); // Tracks errors
-  const [missingFields, setMissingFields] = useState([]); // Tracks which required fields are missing
+  const [isSubmitted, setIsSubmitted] = useState(false);
+  const [generatedResult, setGeneratedResult] = useState(null);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState(null);
+  const [missingFields, setMissingFields] = useState([]);
 
+  // Handle input changes for text/select fields
   const handleChange = (e) => {
     const { name, value } = e.target;
     setFormData((prev) => ({ ...prev, [name]: value }));
   };
 
+  // Submit form
   const handleSubmit = async (e) => {
     e.preventDefault();
     setLoading(true);
     setError(null);
     setMissingFields([]);
 
+    // 1. Auth Check
     if (!auth.isAuthenticated || !auth.user?.id_token) {
       const authError = "You must be logged in to perform this action.";
       setError(authError);
@@ -48,7 +51,7 @@ export default function LocationForm({ onBack }) {
       return;
     }
 
-    // Ensure required fields are filled
+    // 2. Validate Required Fields
     const requiredFields = [
       "type",
       "terrain",
@@ -60,43 +63,31 @@ export default function LocationForm({ onBack }) {
     const emptyFields = requiredFields.filter((field) => !formData[field]);
 
     if (emptyFields.length > 0) {
-      setError(`You must select a ${emptyFields.join(", ")}.`);
+      const errorMessage = `Missing required fields: ${emptyFields.join(", ")}. Please fill them out.`;
+      setError(errorMessage);
+      logger.error(errorMessage);
       setMissingFields(emptyFields);
       setLoading(false);
       return;
     }
 
     try {
-      // Remove empty fields from request
+      // 3. Sanitize Data (Remove fields with empty strings)
       const sanitizedData = Object.fromEntries(
-        Object.entries(formData).filter(([_, value]) => value.trim() !== ""),
+        Object.entries(formData).filter(([_, val]) => val.trim() !== ""),
       );
       logger.info("Sanitized form data:", sanitizedData);
 
-      // Format request body according to the required structure
-      const requestBody = {
-        name: sanitizedData.name,
-        type: "location",
-        visibility: "public",
-        data: {
-          type: sanitizedData.type,
-          terrain: sanitizedData.terrain,
-          climate: sanitizedData.climate,
-          atmosphere: sanitizedData.atmosphere,
-          inhabitants: sanitizedData.inhabitants,
-          dangerLevel: sanitizedData.dangerLevel,
-          pointsOfInterest: sanitizedData.pointsOfInterest || "",
-          narrativeRole: sanitizedData.narrativeRole || "",
-          customDescription: sanitizedData.customDescription || "",
-        },
-      };
-
-      logger.debug("Final request payload:", requestBody);
-
-      // API call
-      const response = await getAssetImage(auth.user, requestBody, "location");
+      // 4. Send FLAT data (no manual nesting needed!)
+      logger.debug("Sending sanitized location data to API...", sanitizedData);
+      const response = await getAssetImage(
+        auth.user,
+        sanitizedData,
+        "location",
+      );
       logger.info("API Response:", response);
 
+      // 5. Store the resulting asset in state
       setGeneratedResult({
         id: response?.asset?.id,
         name: response?.asset?.name,
@@ -115,21 +106,21 @@ export default function LocationForm({ onBack }) {
     }
   };
 
-  if (isSubmitted) {
+  // If a location is already generated, display it
+  if (generatedResult && generatedResult.id && generatedResult.imageUrl) {
     return (
       <GeneratedAsset
-        onBack={() => setIsSubmitted(false)}
-        data={{ id: "locations", ...formData, generated: generatedResult }}
+        data={generatedResult}
+        onBack={() => setGeneratedResult(null)}
       />
     );
   }
 
+  // Otherwise, display the form
   return (
     <form onSubmit={handleSubmit} className="space-y-8">
       <div className="space-y-6">
         <h2 className="text-lg font-semibold text-white">Create Location</h2>
-
-        {/* Display Error Message */}
         {error && <p className="text-red-500 font-bold">{error}</p>}
 
         {/* Location Name */}
@@ -151,7 +142,7 @@ export default function LocationForm({ onBack }) {
           />
         </div>
 
-        {/* Second Section: Dropdowns */}
+        {/* Dropdowns */}
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-4 gap-y-6">
           {[
             {
