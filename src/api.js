@@ -1,8 +1,8 @@
-// api.js!
+// api.js
 
 const logger = require("@/utils/logger");
 
-const apiUrl = process.env.API_URL || "http://localhost:8080";
+const apiUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8080";
 const logLevel = process.env.NEXT_PUBLIC_LOG_LEVEL; // Retrieve the log level for controlling console logs securely
 const isDebug = logLevel === "debug"; // Boolean flag to enable debug-level console logging
 /****************************************************************
