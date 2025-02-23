@@ -122,11 +122,11 @@ export default function GeneratedAsset({ onBack, data }) {
           <i>Description</i>
         </h4>
         {data?.description ? (
-          <p className="text-sm text-gray-500 mt-4 bg-gray-700 p-4 rounded-md">
+          <p className="text-sm text-gray-100 mt-4 bg-gray-700 p-4 rounded-md">
             {data.description}
           </p>
         ) : (
-          <p className="text-sm text-gray-400 mt-4">
+          <p className="text-sm text-gray-100 mt-4">
             No description available.
           </p>
         )}
