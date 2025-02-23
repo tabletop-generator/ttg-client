@@ -1,4 +1,4 @@
-// api.js!
+// api.js
 
 const logger = require("@/utils/logger");
 
