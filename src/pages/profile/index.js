@@ -97,7 +97,7 @@ function Profile() {
     setSelectedCollection(collection);
   };
 
-  const handleSave = async (newUsername, newBio, newProfilePhoto) => {
+  const handleSave = async (user, newUsername, newBio, newProfilePhoto) => {
     const updatedUser = {
       ...user,
       displayName: newUsername,
