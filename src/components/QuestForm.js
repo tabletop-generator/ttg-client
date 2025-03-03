@@ -124,7 +124,7 @@ export default function QuestForm({ onBack }) {
         name: response?.asset?.name,
         imageUrl: response?.asset?.imageUrl,
         visibility: response?.asset?.visibility,
-        description: response?.asset?.data?.customDescription,
+        description: response?.asset?.description,
       });
     } catch (err) {
       setError("Failed to generate the quest. Please try again.");
