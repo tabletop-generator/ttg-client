@@ -37,7 +37,7 @@ These scripts are located in `package.json` and can be run using `npm run <scrip
 
 - `dev`: Starts Next.js in development mode.
 - `build`: Builds the application for production usage and outputs the generated static site to `out/`.
-- `start:static`: Serves the built static files from `out/`.
+- `serve`: Serves the built static files from `out/`.
 
 ### Linting & Formatting
 
