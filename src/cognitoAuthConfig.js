@@ -1,4 +1,10 @@
 import { getUser, postUser } from "@/api";
+import {
+  setFetchUserError,
+  setRetryFunction,
+  showRetryBanner,
+} from "@/utils/retryHandler";
+
 import { WebStorageStateStore } from "oidc-client-ts";
 // See https://authts.github.io/oidc-client-ts/index.html
 /**
@@ -76,45 +82,54 @@ const cognitoAuthConfig = {
            * Begin the process of fetching user information
            **************************************************/
 
-          try {
-            // Fetch full user data, pass _user for token and hashedEmail
-            const fetchedUser = await getUser(_user, hashedEmail);
+          const fetchUserData = async () => {
+            try {
+              setFetchUserError(false); // Reset error flag before retry
 
-            if (fetchedUser) {
-              // If debug display the fetched user
-              if (isDebug) {
-                console.log("Fetched user:", fetchedUser);
+              // Fetch full user data, pass _user for token and hashedEmail
+              const fetchedUser = await getUser(_user, hashedEmail);
+
+              if (fetchedUser) {
+                // If debug display the fetched user
+                if (isDebug) {
+                  console.log("Fetched user:", fetchedUser);
+                }
+                // Start constructing a display object using placeholder if fields are null
+                const userData = {
+                  ...fetchedUser.data.user, // Assign fetch data
+                  displayName:
+                    fetchedUser.data.user.displayName ||
+                    _user?.profile?.["cognito:username"], // If no display name use COGNITO user name
+                  profileBio:
+                    fetchedUser.data.user.profileBio ||
+                    "Undefined. Still loading... Stay tuned.", //If no bio use placeholder txt
+                  profilePictureUrl:
+                    fetchedUser.data.user.profilePictureUrl ||
+                    "/placeholder/p03.png", // If no avatar url use p03.png as placeholder (dwarf)
+                };
+
+                // For debug purposes log the new userData obj
+                if (isDebug) {
+                  console.log("Stored user:", userData);
+                }
+
+                // Store the userData obj in local storage to be used in src/context/UserContext.js so user
+                // will stay consistent through all app areas
+                localStorage.setItem("userInfo", JSON.stringify(userData));
+
+                // Trigger the custom event
+                window.dispatchEvent(new Event("storage"));
               }
-
-              // Start constructing a display object using placeholder if fields are null
-              const userData = {
-                ...fetchedUser.data.user, // Assign fetch data
-                displayName:
-                  fetchedUser.data.user.displayName ||
-                  _user?.profile?.["cognito:username"], // If no display name use COGNITO user name
-                profileBio:
-                  fetchedUser.data.user.profileBio ||
-                  "Undefined. Still loading... Stay tuned.", //If no bio use placeholder txt
-                profilePictureUrl:
-                  fetchedUser.data.user.profilePictureUrl ||
-                  "/placeholder/p03.png", // If no avatar url use p03.png as placeholder (dwarf)
-              };
-
-              // For debug purposes log the new userData obj
-              if (isDebug) {
-                console.log("Stored user:", userData);
-              }
-
-              // Store the userData obj in local storage to be used in src/context/UserContext.js so user
-              // will stay consistent through all app areas
-              localStorage.setItem("userInfo", JSON.stringify(userData));
-
-              // Trigger the custom event
-              window.dispatchEvent(new Event("storage"));
+            } catch (error) {
+              console.error("ERROR fetching user data:", error);
+              setFetchUserError(true);
+              //showRetryButton();
+              showRetryBanner(); // Display the retry banner
             }
-          } catch (error) {
-            console.error("ERROR fetching user data: ", error);
-          }
+          };
+
+          setRetryFunction(fetchUserData); // Assign function for retry
+          fetchUserData(); // Initial attempt
         } else {
           console.warn(
             "No hashed email returned from API response, skipping fetching user",

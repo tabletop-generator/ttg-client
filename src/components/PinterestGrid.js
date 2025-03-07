@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-
+// cspell:ignore PinterestGrid
 export default function PinterestGrid() {
   // State to store images and control lazy loading
   const [images, setImages] = useState([]);
