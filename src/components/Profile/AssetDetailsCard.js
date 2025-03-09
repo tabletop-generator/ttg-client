@@ -1,63 +1,58 @@
 import { deletePrismaAsset, updatePrismaAssetInfo } from "@/api";
-import { useAuth } from "react-oidc-context";
-
 import { Edit, Heart, Trash } from "lucide-react";
 import { useState } from "react";
+import { useAuth } from "react-oidc-context";
+
 export default function AssetDetailsCard({ asset, onBack }) {
   const auth = useAuth();
   const user = auth.user;
   const [likes, setLikes] = useState(asset?.likes || 0); // Fake likes
-  const [isPublic, setIsPublic] = useState(asset?.isPublic ?? false);
-  const [name, setName] = useState(asset?.name || "Unnamed"); // Name
+
+  const [visibility, setVisibility] = useState(asset?.visibility || "private");
+
+  const [name, setName] = useState(asset?.name || "Unnamed");
   const [description, setDescription] = useState(
     asset?.description || "No backstory available.",
-  ); // Description
-  const [isEditing, setIsEditing] = useState(false); // Edit Mode
+  );
+  const [isEditing, setIsEditing] = useState(false);
 
   const defaultImage = "/placeholder/p01.png"; // Fallback image
 
-  const handleLike = () => setLikes(likes + 1); // Increment likes
+  const handleLike = () => setLikes(likes + 1);
 
   const handleDelete = async () => {
     if (confirm("Are you sure you want to delete this asset?")) {
       try {
         await deletePrismaAsset(asset.id);
-
         onBack(); // Navigate back after deletion
-
-        // Force refresh the previous page after a slight delay
         setTimeout(() => {
           window.location.reload();
-        }, 100); // Delay to ensure navigation completes before reload
-
+        }, 100);
         console.log("Asset deleted successfully!");
       } catch (error) {
         console.error("Failed to delete asset:", error);
       }
     }
   };
-  const handleToggleVisibility = (value) => {
-    setIsPublic(value);
-    console.log("Visibility set to:", value ? "public" : "private");
+
+  const handleToggleVisibility = (newVisibility) => {
+    setVisibility(newVisibility);
+    console.log("Visibility set to:", newVisibility);
   };
 
   const handleSave = async () => {
-    // Prepare the updated data
     const newInfo = {
       name,
       description,
-      visibility: isPublic ? "public" : "private",
+      visibility,
     };
 
     console.log("New info being sent to API:", newInfo);
 
     try {
-      // Make the API call
       await updatePrismaAssetInfo(user, asset.uuid, newInfo);
-
       console.log("Asset updated successfully!");
-      asset.isPublic = isPublic;
-      // Only exit editing mode after a successful update
+      asset.visibility = visibility;
       setIsEditing(false);
     } catch (error) {
       console.error("Error updating asset:", error);
@@ -65,17 +60,15 @@ export default function AssetDetailsCard({ asset, onBack }) {
   };
 
   const handleCancel = () => {
-    // Revert to original values
     setName(asset?.name || "Unnamed");
     setDescription(asset?.description || "No backstory available.");
-    setIsPublic(asset?.isPublic ?? false);
+    setVisibility(asset?.visibility || "private");
     setIsEditing(false);
   };
 
   return (
     <div className="flex items-center justify-center min-h-screen bg-gray-900 text-white">
       <div className="bg-gray-800 rounded-lg shadow-lg p-6 w-4/5 max-w-2xl">
-        {/* Asset Image */}
         {/* eslint-disable-next-line @next/next/no-img-element */}
         <img
           src={asset.imageUrl || defaultImage}
@@ -83,9 +76,7 @@ export default function AssetDetailsCard({ asset, onBack }) {
           className="w-full rounded-lg mb-6"
         />
 
-        {/* Name, Likes, Edit Button */}
         <div className="flex items-center justify-between mb-6">
-          {/* Name */}
           {isEditing ? (
             <input
               type="text"
@@ -98,7 +89,6 @@ export default function AssetDetailsCard({ asset, onBack }) {
             <h1 className="text-3xl font-bold text-white">{name}</h1>
           )}
 
-          {/* Like & Edit Buttons */}
           <div className="flex items-center gap-4">
             <button
               onClick={handleLike}
@@ -120,7 +110,6 @@ export default function AssetDetailsCard({ asset, onBack }) {
           </div>
         </div>
 
-        {/* Asset Info */}
         <p className="text-gray-400 mb-2 capitalize">
           <strong>Type:</strong> {asset.type || "Unknown Type"}
         </p>
@@ -131,7 +120,6 @@ export default function AssetDetailsCard({ asset, onBack }) {
             : "N/A"}
         </p>
 
-        {/* Backstory / Description */}
         <h2 className="text-2xl font-bold text-white mb-4">Backstory</h2>
 
         {isEditing ? (
@@ -146,21 +134,24 @@ export default function AssetDetailsCard({ asset, onBack }) {
           <p className="text-gray-300 leading-relaxed mb-6">{description}</p>
         )}
 
-        {/* Visibility Toggle in Edit Mode */}
         {isEditing && (
           <div className="flex justify-center mt-6 space-x-4">
             <button
-              onClick={() => handleToggleVisibility(true)}
+              onClick={() => handleToggleVisibility("public")}
               className={`px-4 py-2 rounded-md ${
-                isPublic ? "bg-gray-400 text-black" : "bg-gray-600 text-white"
+                visibility === "public"
+                  ? "bg-gray-400 text-black"
+                  : "bg-gray-600 text-white"
               }`}
             >
               Public
             </button>
             <button
-              onClick={() => handleToggleVisibility(false)}
+              onClick={() => handleToggleVisibility("private")}
               className={`px-4 py-2 rounded-md ${
-                !isPublic ? "bg-gray-400 text-black" : "bg-gray-600 text-white"
+                visibility === "private"
+                  ? "bg-gray-400 text-black"
+                  : "bg-gray-600 text-white"
               }`}
             >
               Private
@@ -172,12 +163,11 @@ export default function AssetDetailsCard({ asset, onBack }) {
           <p className="text-gray-400 mt-4">
             Current visibility:{" "}
             <span className="text-white">
-              {isPublic ? "Public" : "Private"}
+              {visibility.charAt(0).toUpperCase() + visibility.slice(1)}
             </span>
           </p>
         )}
 
-        {/* Save, Cancel & Delete Buttons in Edit Mode */}
         {isEditing && (
           <div className="flex justify-center mt-6 space-x-4">
             <button
@@ -202,7 +192,6 @@ export default function AssetDetailsCard({ asset, onBack }) {
           </div>
         )}
 
-        {/* Back Button */}
         <button
           onClick={onBack}
           className="mt-6 px-4 py-2 bg-indigo-600 text-white rounded-md hover:bg-indigo-500"
