@@ -1,0 +1,36 @@
+/* Centers the card on the screen, dark background */
+.assetCardContainer {
+  @apply flex items-center justify-center min-h-screen bg-gray-900 text-white;
+}
+
+/* Main card styling: background, rounding, shadow, padding */
+.assetCard {
+  @apply bg-gray-800 rounded-lg shadow-lg p-6 w-4/5 max-w-2xl;
+}
+
+/* Simple media query: reduce padding on small screens */
+@media (max-width: 640px) {
+  .assetCard {
+    @apply p-4;
+  }
+}
+
+/* Common style for round icon buttons (like, star, share, edit) */
+.roundedButton {
+  @apply w-10 h-10 flex items-center justify-center rounded-full;
+}
+
+/* Gray background for round buttons */
+.bgGrayButton {
+  @apply bg-gray-700 hover:bg-gray-600;
+}
+
+/* Green background for share button when copied */
+.bgGreenButton {
+  @apply bg-green-500 hover:bg-green-600;
+}
+
+/* Dropdown menu for the Edit button */
+.dropdownMenu {
+  @apply absolute top-full right-0 mt-2 w-40 bg-gray-900 rounded shadow-lg z-10;
+}
