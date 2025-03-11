@@ -175,6 +175,7 @@ function Profile() {
             collection={selectedCollection}
             onBack={() => setSelectedCollection(null)}
             onAssetClick={handleAssetClick}
+            allAssets={userAssets}
           />
         )}
       </div>
