@@ -1,5 +1,10 @@
 import { useState } from "react";
 
+function isValidObjectURL(url) {
+  const pattern = /^blob:(https?|ftp|file):\/\/[-A-Z0-9+&@#\/%?=~_|!:,.;]*[-A-Z0-9+&@#\/%=~_|]$/i;
+  return pattern.test(url);
+}
+
 export default function EditableProfileHeader({
   username,
   profilePhoto,
@@ -23,7 +28,12 @@ export default function EditableProfileHeader({
       }
 
       const imageUrl = URL.createObjectURL(file);
-      setSelectedPhoto(imageUrl);
+      if (isValidObjectURL(imageUrl)) {
+        setSelectedPhoto(imageUrl);
+      } else {
+        alert("Invalid image URL.");
+        return;
+      }
       setIsModalOpen(false);
     }
   };
