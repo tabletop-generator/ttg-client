@@ -143,13 +143,10 @@ const cognitoAuthConfig = {
       }
     } catch (error) {
       console.error("Error in onSigninCallback:", error.message);
-      if (error.response) {
-        console.error(
-          "API responded with:",
-          error.response.status,
-          error.response.data,
-        );
-      }
+      setFetchUserError(true);
+      // Show the banner so user can try again
+      showRetryBanner();
+      return Promise.resolve();
     }
 
     return Promise.resolve(); //Ensures function always resolves
