@@ -1,77 +1,68 @@
 // src/utils/retryHandler.js
-
 import RetryBanner from "@/components/RetryBanner";
 import { createRoot } from "react-dom/client";
 
-let retryFetchUser = null; // Function reference for retrying the fetch request
-let fetchUserError = false; // Tracks whether an error occurred during fetch
-let retryCount = 0; // Tracks the number of retry attempts
+let retryFetchUser = null; // Function reference for retrying the user fetch
+let fetchUserError = false; // Tracks whether an error occurred
+let retryCount = 0; // Tracks how many times we've retried
 
 /**
- * Displays the RetryBanner component when a fetch attempt fails.
- * If the retry count reaches 2 unsuccessful attempts, the banner
- * will prompt the user to log out instead of retrying.
+ * Renders the RetryBanner component using the current retryCount.
+ * If retryCount >= 2, it shows a logout prompt. Otherwise, it shows a retry button.
  */
-export const showRetryBanner = () => {
-  const existingBanner = document.getElementById("retryBannerContainer");
-
-  // If the banner doesn't exist, create a new container element
-  if (!existingBanner) {
-    const div = document.createElement("div");
-    div.id = "retryBannerContainer";
-    document.body.appendChild(div);
-  }
-
-  // Always create a new React root to ensure the state updates correctly
-  const root = createRoot(document.getElementById("retryBannerContainer"));
-
-  root.render(
-    <RetryBanner
-      retryCount={retryCount}
-      onRetry={async () => {
-        if (retryFetchUser) {
-          retryCount++; // Increment retry count on each attempt
-          await retryFetchUser(); // Attempt to fetch user data again
-
+const renderBanner = (root) => {
+  if (retryCount >= 2) {
+    // After two failed attempts, show "Log Out"
+    root.render(<RetryBanner showLogout={true} retryCount={retryCount} />);
+  } else {
+    // Otherwise show the "Retry" banner
+    root.render(
+      <RetryBanner
+        retryCount={retryCount}
+        onRetry={async () => {
+          retryCount++; // Increase retry count
+          if (retryFetchUser) {
+            await retryFetchUser(); // Attempt the user fetch again
+          }
           console.log("Retry attempt:", retryCount);
-
-          // If the fetch is successful, remove the retry banner
-          if (!fetchUserError) {
-            document.body.removeChild(
-              document.getElementById("retryBannerContainer"),
-            );
-          }
-          // If retry count reaches 2, switch to log out prompt
-          else if (retryCount >= 2) {
-            console.log("Retry limit reached, prompting log out:", retryCount);
-            root.render(
-              <RetryBanner showLogout={true} retryCount={retryCount} />,
-            );
-          }
-          // Otherwise, keep retrying
-          else {
-            root.render(
-              <RetryBanner retryCount={retryCount} onRetry={retryFetchUser} />,
-            );
-          }
-        }
-      }}
-      showLogout={retryCount >= 2} // Show log out button after two failed attempts
-    />,
-  );
+          // Re-render the banner with updated retryCount
+          renderBanner(root);
+        }}
+        showLogout={false}
+      />,
+    );
+  }
 };
 
 /**
- * Sets the retry function that will be called when the user retries fetching data.
- * @param {Function} retryFunction - Function to call when retrying user fetch
+ * Displays the RetryBanner component. If it doesn't exist in the DOM yet,
+ * we create a container. Then we call renderBanner to show the correct state.
+ */
+export const showRetryBanner = () => {
+  let bannerContainer = document.getElementById("retryBannerContainer");
+
+  // If the container doesn't exist, create it
+  if (!bannerContainer) {
+    bannerContainer = document.createElement("div");
+    bannerContainer.id = "retryBannerContainer";
+    document.body.appendChild(bannerContainer);
+  }
+
+  const root = createRoot(bannerContainer);
+  renderBanner(root);
+};
+
+/**
+ * Sets the function that should be called whenever the user hits "Retry."
+ * Typically, this is your "fetchUserData" function.
  */
 export const setRetryFunction = (retryFunction) => {
   retryFetchUser = retryFunction;
 };
 
 /**
- * Updates the error state indicating whether fetching the user data failed.
- * @param {boolean} hasError - Boolean indicating if an error occurred
+ * Updates the error state indicating if fetching user data failed.
+ * @param {boolean} hasError
  */
 export const setFetchUserError = (hasError) => {
   fetchUserError = hasError;
