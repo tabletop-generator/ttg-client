@@ -1,4 +1,4 @@
-import { getUser, updatePrismaUserInfo } from "@/api";
+import { getUser, getUserAssets } from "@/api";
 import AssetGrid from "@/components/Profile/AssetGrid";
 import CollectionDetails from "@/components/Profile/CollectionDetails";
 import CollectionGrid from "@/components/Profile/CollectionGrid";
@@ -10,55 +10,40 @@ import { useRouter } from "next/router";
 import { useEffect, useMemo, useState } from "react";
 import { useAuth } from "react-oidc-context";
 
-const logLevel = process.env.NEXT_PUBLIC_LOG_LEVEL;
-const isDebug = logLevel === "debug";
-
 function Profile() {
   const auth = useAuth();
   const router = useRouter();
   const { tab = "assets" } = router.query;
 
   const [activeTab, setActiveTab] = useState(tab);
-  const [fetchedUser, setFetchedUser] = useState(null); // Store fetched user data
+  const [fetchedUser, setFetchedUser] = useState(null);
+  const [userAssets, setUserAssets] = useState([]);
   const [selectedCollection, setSelectedCollection] = useState(null);
+  const [isEditing, setIsEditing] = useState(false);
 
   const { user, setUser, hashedEmail } = useUser();
 
-  // Fetch user data once on page load to make sure we have latest info
+  // Fetch user data once on page load
   useEffect(() => {
     const fetchUserData = async () => {
       try {
         const _user = auth.user;
-
         if (!_user) {
           console.error("No authenticated user found.");
           return;
         }
 
         const response = await getUser(_user, hashedEmail);
-
         if (response) {
-          if (isDebug) console.log("Fetched user:", response);
-
-          const userData = {
-            ...response.data.user,
-            displayName:
-              response.data.user.displayName ||
-              _user?.profile?.["cognito:username"],
-            profileBio:
-              response.data.user.profileBio ||
-              "Undefined. Still loading... Stay tuned.",
-            profilePictureUrl:
-              response.data.user.profilePictureUrl || "/placeholder/p03.png",
-          };
-
-          // Update context and local storage
-          setUser(userData);
-          localStorage.setItem("userInfo", JSON.stringify(userData));
-          window.dispatchEvent(new Event("storage"));
-
-          // Set fetched user data
+          setUser(response.data.user);
           setFetchedUser(response.data.user);
+
+          if (response.data.user.collections) {
+            localStorage.setItem(
+              "userCollections",
+              JSON.stringify(response.data.user.collections),
+            );
+          }
         }
       } catch (error) {
         console.error("ERROR fetching user data: ", error);
@@ -66,68 +51,39 @@ function Profile() {
     };
 
     fetchUserData();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []); // Runs once on page load
+  }, [auth.user, hashedEmail, setUser]);
 
-  // Memoized assets and collections
-  const userAssets = useMemo(() => fetchedUser?.assets || [], [fetchedUser]);
+  // Fetch assets
+  useEffect(() => {
+    const fetchAssets = async () => {
+      try {
+        const assetsResponse = await getUserAssets(auth.user);
+        if (assetsResponse?.assets) {
+          setUserAssets(assetsResponse.assets);
+        } else {
+          console.warn("Unexpected assets response structure:", assetsResponse);
+        }
+      } catch (error) {
+        console.error("Error fetching assets:", error);
+      }
+    };
+
+    if (auth.user) {
+      fetchAssets();
+    }
+  }, [auth.user]);
+
+  // Memoized collections from fetchedUser
   const userCollections = useMemo(
     () => fetchedUser?.collections || [],
     [fetchedUser],
   );
 
-  if (isDebug) {
-    console.log("User Assets:", userAssets);
-    console.log("User Collections:", userCollections);
-  }
-  // State for toggling edit mode
-  const [isEditing, setIsEditing] = useState(false);
-
+  // Handle tab change
   const handleTabChange = (tab) => {
     setActiveTab(tab);
     setSelectedCollection(null);
     router.push(`/profile?tab=${tab}`, undefined, { shallow: true });
-  };
-
-  const handleAssetClick = (assetId) => {
-    router.push(`/profile/${assetId}`);
-  };
-
-  const handleCollectionClick = (collection) => {
-    setSelectedCollection(collection);
-  };
-
-  const handleSave = async (user, newUsername, newBio, newProfilePhoto) => {
-    const updatedUser = {
-      ...user,
-      displayName: newUsername,
-      profileBio: newBio,
-      profilePictureUrl: newProfilePhoto,
-    };
-
-    setUser(updatedUser);
-    localStorage.setItem("userInfo", JSON.stringify(updatedUser));
-    window.dispatchEvent(new Event("storage"));
-
-    try {
-      await updatePrismaUserInfo({
-        id: user.id,
-        id_token: auth.user.id_token,
-        displayName: newUsername,
-        profileBio: newBio,
-        profilePictureUrl: newProfilePhoto,
-      });
-      console.log("Profile updated successfully!");
-    } catch (error) {
-      console.error("Profile update failed:", error);
-    }
-
-    setIsEditing(false);
-  };
-
-  // Handle cancel edit
-  const handleCancelEdit = () => {
-    setIsEditing(false);
   };
 
   return (
@@ -139,15 +95,15 @@ function Profile() {
             username={user?.displayName}
             profilePhoto={user?.profilePictureUrl}
             bio={user?.profileBio}
-            onEdit={() => setIsEditing(true)} // Enable edit mode
+            onEdit={() => setIsEditing(true)}
           />
         ) : (
           <EditableProfileHeader
             username={user?.displayName}
             profilePhoto={user?.profilePictureUrl}
             bio={user?.profileBio}
-            onSave={handleSave}
-            onCancel={handleCancelEdit}
+            onSave={() => setIsEditing(false)}
+            onCancel={() => setIsEditing(false)}
           />
         )}
 
@@ -158,24 +114,29 @@ function Profile() {
         {activeTab === "assets" && (
           <AssetGrid
             assets={userAssets}
-            onAssetClick={handleAssetClick}
+            setUser={setUser}
             user={user}
+            collections={userCollections}
+            hashedEmail={hashedEmail}
           />
         )}
 
         {activeTab === "collections" && !selectedCollection && (
           <CollectionGrid
+            user={user}
+            setUser={setUser}
             collections={userCollections}
-            onCollectionClick={handleCollectionClick}
+            onCollectionClick={setSelectedCollection}
           />
         )}
 
         {selectedCollection && (
           <CollectionDetails
             collection={selectedCollection}
+            userCollections={userCollections}
             onBack={() => setSelectedCollection(null)}
-            onAssetClick={handleAssetClick}
             allAssets={userAssets}
+            setUser={setUser}
           />
         )}
       </div>
