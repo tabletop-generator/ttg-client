@@ -12,7 +12,7 @@ import {
 import { Bars3Icon, BellIcon, XMarkIcon } from "@heroicons/react/24/outline";
 import { useRouter } from "next/router";
 import { Log } from "oidc-client-ts";
-import { useEffect } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useAuth } from "react-oidc-context";
 
 export default function Layout({ children }) {
@@ -23,6 +23,8 @@ export default function Layout({ children }) {
   };
 
   const { user, setUser } = useUser();
+
+  const [activeItem, setActiveItem] = useState(null);
 
   // https://authts.github.io/oidc-client-ts/index.html#md:logging
   if (process.env.NODE_ENV !== "development") {
@@ -73,31 +75,65 @@ export default function Layout({ children }) {
     });
   }, [auth]);
 
-  const navigation = [
-    { name: "Discover", href: "/", current: true },
-    ...(auth?.isAuthenticated
-      ? [{ name: "Create", href: "/create", current: false }]
-      : []),
-    {
-      name: auth?.error
-        ? "An error occurred. Please refresh the page."
-        : auth?.isLoading
-          ? "Loading..."
-          : auth?.isAuthenticated
-            ? "Profile"
-            : "Log In / Sign Up",
-      href: auth?.isAuthenticated
-        ? "/profile"
-        : process.env.NEXT_PUBLIC_OAUTH_SIGN_IN_REDIRECT_URL,
-      current: false,
-      onClick: auth?.isAuthenticated
-        ? null
-        : (e) => {
-            e.preventDefault();
-            auth.signinRedirect();
-          },
-    },
-  ];
+  let navigation = useMemo(
+    () => [
+      { name: "Discover", href: "/", current: true },
+      ...(auth?.isAuthenticated
+        ? [{ name: "Create", href: "/create", current: false }]
+        : []),
+      {
+        name: auth?.error
+          ? "An error occurred. Please refresh the page."
+          : auth?.isLoading
+            ? "Loading..."
+            : auth?.isAuthenticated
+              ? "Profile"
+              : "Log In / Sign Up",
+        href: auth?.isAuthenticated
+          ? "/profile"
+          : process.env.NEXT_PUBLIC_OAUTH_SIGN_IN_REDIRECT_URL,
+        current: false,
+        onClick: auth?.isAuthenticated
+          ? null
+          : (e) => {
+              e.preventDefault();
+              auth.signinRedirect();
+            },
+      },
+    ],
+    [auth],
+  );
+
+  useEffect(() => {
+    const handlePageLoad = () => {
+      console.log("Page loaded");
+
+      let currentActiveItem = navigation?.find((item) => item.current === true);
+
+      let itemToSetAsActive = navigation?.find(
+        (item) => item.href === window.location.pathname,
+      );
+
+      if (currentActiveItem) {
+        currentActiveItem.current = false;
+      }
+
+      if (itemToSetAsActive) {
+        itemToSetAsActive.current = true;
+        console.log("set", itemToSetAsActive.current);
+      }
+
+      setActiveItem(navigation?.find((item) => item.current === true));
+    };
+
+    handlePageLoad();
+
+    window.addEventListener("load", handlePageLoad);
+
+    return () => {
+      window.removeEventListener("load", handlePageLoad);
+    };
+  }, [navigation]);
 
   //If user is authenticated assign the user info to be used, in not null
   const userInfo = auth?.isAuthenticated ? user : null;
