@@ -10,12 +10,10 @@ export default function CreateCollectionForm({ onCancel, onCreate }) {
   };
 
   const handleCreate = () => {
-    // Fake collection object
+    // Create a collection object with only the entered values
     const newCollection = {
-      id: Date.now(), // Unique ID (mocked)
       name,
       visibility,
-      assets: [], // Empty assets list
     };
 
     // Call the parent function with the new collection

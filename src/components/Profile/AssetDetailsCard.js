@@ -1,4 +1,12 @@
-import { deletePrismaAsset, updatePrismaAssetInfo } from "@/api";
+/* eslint-disable react-hooks/exhaustive-deps */
+/* eslint-disable @next/next/no-img-element */
+import {
+  addAssetsToCollection,
+  deletePrismaAsset,
+  getCollection,
+  postCollection,
+  updatePrismaAssetInfo,
+} from "@/api";
 import CommentsSection from "@/components/Profile/CommentsSection";
 import CreateCollectionForm from "@/components/Profile/CreateCollectionForm";
 import styles from "@/styles/AssetDetailsCard.module.css"; // The CSS module
@@ -6,9 +14,18 @@ import { Heart, MoreHorizontal, Share2, Star } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import { useAuth } from "react-oidc-context";
 
-export default function AssetDetailsCard({ asset, onBack }) {
+export default function AssetDetailsCard({
+  user,
+  hashedEmail,
+  asset,
+  userCollections,
+  setUserCollections,
+  onBack,
+}) {
   const auth = useAuth();
-  const user = auth.user;
+  const cognitoUser = auth.user;
+
+  const userColl = user?.collections ? [...user.collections] : [];
 
   // Core asset states
   const [visibility, setVisibility] = useState(asset?.visibility || "private");
@@ -20,29 +37,45 @@ export default function AssetDetailsCard({ asset, onBack }) {
   // UI states
   const [isEditing, setIsEditing] = useState(false);
   const [menuOpen, setMenuOpen] = useState(false);
-
-  // Likes & like toggle (local for now)
-  const [likes, setLikes] = useState(asset?.likes || 0);
-  const [isLiked, setIsLiked] = useState(false);
-
-  // Share tooltip
-  const [copied, setCopied] = useState(false);
-
-  // Delete modal
-  const [showDeleteModal, setShowDeleteModal] = useState(false);
-
-  const defaultImage = "/placeholder/p01.png"; // fallback
-
-  //collections
-  const [userCollections, setUserCollections] = useState([]);
   const [isCreatingCollection, setIsCreatingCollection] = useState(false);
   const [isStarred, setIsStarred] = useState(false);
   const [showCollectionDropdown, setShowCollectionDropdown] = useState(false);
+  const [likes, setLikes] = useState(asset?.likes || 0);
+  const [isLiked, setIsLiked] = useState(false);
+  const [copied, setCopied] = useState(false);
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
+
+  const [isInCollection, setIsInCollection] = useState(false);
+
+  const defaultImage = "/placeholder/p01.png"; // fallback image
 
   const collectionsDropdownRef = useRef(null);
   const starButtonRef = useRef(null);
+  const dropdownRef = useRef(null);
 
-  // ---- Handlers ----
+  //checking to see if asset is in a collection for the star to be highlighted
+  /*
+  TO PROPERLY TEST/CONNECT WHEN BACKEND API IS WORKING
+  */
+  const isAssetInCollection = async (assetUuid) => {
+    const collection = await getCollection(cognitoUser);
+    if (!collection || !collection.assets) return false;
+    return collection.assets.some((mockAsset) => mockAsset.id === assetUuid);
+  };
+
+  useEffect(() => {
+    (async () => {
+      if (await isAssetInCollection(asset.uuid)) {
+        console.log("This asset is in the collection.");
+        setIsInCollection(true);
+      } else {
+        console.log("Asset not found in the collection.");
+        setIsInCollection(false);
+      }
+    })();
+  }, [asset]);
+
+  // ---- HANDLERS ----
   const handleShare = () => {
     navigator.clipboard
       .writeText(window.location.href)
@@ -58,6 +91,7 @@ export default function AssetDetailsCard({ asset, onBack }) {
     setShowCollectionDropdown(true);
   };
 
+  // Close the collection dropdown when clicking outside
   useEffect(() => {
     const handleClickOutside = (event) => {
       if (
@@ -67,29 +101,87 @@ export default function AssetDetailsCard({ asset, onBack }) {
         !starButtonRef.current.contains(event.target)
       ) {
         setShowCollectionDropdown(false);
-        setIsStarred(false); // Reset star color
+        setIsStarred(false);
       }
     };
 
     document.addEventListener("mousedown", handleClickOutside);
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
-  const handleAddToCollection = (collection) => {
-    console.log(`Added ${asset.name} to collection: ${collection.name}`);
+
+  // Handler when a collection is selected from the dropdown.
+  // Uses the passed collection's ID to add the asset.
+  const handleAddToCollection = async (collection) => {
+    try {
+      await addAssetsToCollection(cognitoUser, collection.id, [asset.uuid]);
+      console.log(`Added ${asset.name} to collection: ${collection.name}`);
+      setIsInCollection(true);
+    } catch (error) {
+      console.error("Failed to add asset:", error);
+    }
     setShowCollectionDropdown(false);
   };
 
-  const handleCreateCollection = (newCollection) => {
-    setUserCollections([...userCollections, newCollection]);
-    setIsCreatingCollection(false);
-    setShowCollectionDropdown(false);
+  // ---- CREATE COLLECTION HANDLER ----
+  // calling API to create a new collection,
+  // and then attempts to add the current asset to the newly created collection.
+  const handleCreateCollection = async (newCollection) => {
+    if (!setUserCollections) {
+      console.error("setUserCollections is undefined!");
+      return;
+    }
+
+    try {
+      // Ensure the user is authenticated and has an id_token
+      if (!cognitoUser?.id_token) {
+        console.error("User is not authenticated!");
+        return;
+      }
+
+      // Combine the user object with the id_token
+      const combinedUser = { ...user, id_token: cognitoUser.id_token };
+
+      // Call API to create the collection
+      const response = await postCollection(combinedUser, newCollection);
+
+      if (response && response.data) {
+        const createdCollection = response.data.collection;
+        console.log("Created Collection:", createdCollection);
+
+        // Update the collections state with the newly created collection
+        setUserCollections((prevCollections) => [
+          ...prevCollections,
+          createdCollection,
+        ]);
+
+        // Add the current asset to the newly created collection
+        try {
+          await addAssetsToCollection(cognitoUser, createdCollection.id, [
+            asset.uuid,
+          ]);
+          console.log(
+            `Added ${asset.name} to the newly created collection: ${createdCollection.name}`,
+          );
+        } catch (error) {
+          console.error("Failed to add asset to new collection:", error);
+        }
+
+        // Close the create collection form and dropdown
+        setIsCreatingCollection(false);
+        setShowCollectionDropdown(false);
+      } else {
+        console.error("Failed to create collection, response:", response);
+      }
+    } catch (error) {
+      console.error("Error creating collection:", error);
+    }
   };
+
   const handleLike = () => {
     setIsLiked(!isLiked);
     setLikes((prev) => (!isLiked ? prev + 1 : Math.max(prev - 1, 0)));
   };
 
-  // Toggle between public/private
   const handleToggleVisibility = (newVisibility) => {
     setVisibility(newVisibility);
     console.log("Visibility:", newVisibility);
@@ -114,12 +206,10 @@ export default function AssetDetailsCard({ asset, onBack }) {
     setIsEditing(false);
   };
 
-  // Trigger the delete modal
   const handleDeleteClick = () => {
     setShowDeleteModal(true);
   };
 
-  // Confirm delete
   const handleDeleteConfirm = async () => {
     try {
       await deletePrismaAsset(asset.id);
@@ -134,13 +224,11 @@ export default function AssetDetailsCard({ asset, onBack }) {
     setShowDeleteModal(false);
   };
 
-  // Cancel delete
   const handleDeleteCancel = () => {
     setShowDeleteModal(false);
   };
 
-  // For the 3-dot edit menu
-  const dropdownRef = useRef(null);
+  // Close the 3-dot menu when clicking outside
   useEffect(() => {
     const handleClickOutside = (event) => {
       if (dropdownRef.current && !dropdownRef.current.contains(event.target)) {
@@ -151,19 +239,18 @@ export default function AssetDetailsCard({ asset, onBack }) {
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
 
-  // ---- UI ----
+  // ---- UI RENDERING ----
   return (
     <div className={styles.assetCardContainer}>
       <div className={styles.assetCard}>
-        {/* ASSET IMAGE */}
-        {/* eslint-disable-next-line @next/next/no-img-element */}
+        {/* Asset Image */}
         <img
           src={asset.imageUrl || defaultImage}
           alt={asset.name || "Unknown Asset"}
           className="w-full rounded-lg mb-6"
         />
 
-        {/* ASSET NAME + LIKE COUNT */}
+        {/* Asset Name & Like Count */}
         <div className="flex items-center justify-between mb-4">
           {isEditing ? (
             <input
@@ -182,7 +269,7 @@ export default function AssetDetailsCard({ asset, onBack }) {
           </div>
         </div>
 
-        {/* Asset type area*/}
+        {/* Asset Type and Created Date */}
         <p className="text-gray-400 mb-2 capitalize">
           <strong>Type:</strong> {asset.type || "Unknown Type"}
         </p>
@@ -193,9 +280,8 @@ export default function AssetDetailsCard({ asset, onBack }) {
             : "N/A"}
         </p>
 
-        {/* BUTTON AREA: Like, Star, Share, Edit */}
+        {/* Buttons: Like, Star (for collection), Share, Edit */}
         <div className="flex items-center justify-center gap-4 mb-6">
-          {/* Like button */}
           {!isEditing && (
             <button
               onClick={handleLike}
@@ -211,10 +297,12 @@ export default function AssetDetailsCard({ asset, onBack }) {
           {!isEditing && (
             <div className="relative" ref={collectionsDropdownRef}>
               <button
-                ref={starButtonRef} // Reference the button
+                ref={starButtonRef}
                 onClick={handleStar}
                 className={`w-10 h-10 ${styles.roundedButton} ${
-                  isStarred ? "bg-yellow-500 text-black" : styles.bgGrayButton
+                  isInCollection
+                    ? "bg-yellow-500 text-black"
+                    : styles.bgGrayButton
                 }`}
               >
                 <Star className="w-5 h-5 fill-current" />
@@ -223,8 +311,8 @@ export default function AssetDetailsCard({ asset, onBack }) {
               {/* Collection Dropdown */}
               {!isEditing && showCollectionDropdown && (
                 <div className="absolute top-12 left-1/2 -translate-x-1/2 bg-gray-900 text-white rounded-md shadow-lg w-48 p-2 z-20">
-                  {userCollections.length > 0 ? (
-                    userCollections.map((collection) => (
+                  {userColl.length > 0 ? (
+                    userColl.map((collection) => (
                       <button
                         key={collection.id}
                         onClick={() => handleAddToCollection(collection)}
@@ -247,7 +335,7 @@ export default function AssetDetailsCard({ asset, onBack }) {
                 </div>
               )}
 
-              {/* Render `CreateCollectionForm` outside the small dropdown */}
+              {/* Create Collection Modal */}
               {!isEditing && isCreatingCollection && (
                 <div className="fixed inset-0 flex justify-center items-center bg-black bg-opacity-50 backdrop-blur-md z-50">
                   <div className="w-96 bg-gray-900 p-6 rounded-lg shadow-lg">
@@ -261,7 +349,7 @@ export default function AssetDetailsCard({ asset, onBack }) {
             </div>
           )}
 
-          {/* Share button + tooltip */}
+          {/* Share Button */}
           {!isEditing && (
             <div className="relative">
               <button
@@ -286,7 +374,7 @@ export default function AssetDetailsCard({ asset, onBack }) {
             </div>
           )}
 
-          {/* 3-dot edit button + dropdown */}
+          {/* 3-dot Edit Menu */}
           {!isEditing && (
             <div className="relative" ref={dropdownRef}>
               <button
@@ -321,7 +409,7 @@ export default function AssetDetailsCard({ asset, onBack }) {
           )}
         </div>
 
-        {/* BACKSTORY */}
+        {/* Asset Description / Backstory */}
         <h2 className="text-xl font-bold text-white mb-2">Backstory</h2>
         {isEditing ? (
           <textarea
@@ -335,7 +423,7 @@ export default function AssetDetailsCard({ asset, onBack }) {
           <p className="text-gray-300 leading-relaxed mb-4">{description}</p>
         )}
 
-        {/* VISIBILITY SLIDER: only if editing */}
+        {/* Visibility Controls */}
         {isEditing && (
           <div className="flex items-center justify-center mb-4">
             <VisibilitySlider
@@ -345,7 +433,6 @@ export default function AssetDetailsCard({ asset, onBack }) {
           </div>
         )}
 
-        {/* Current Visibility (if not editing) */}
         {!isEditing && (
           <p className="text-gray-400 mb-4">
             <strong>Visibility:</strong>{" "}
@@ -353,10 +440,10 @@ export default function AssetDetailsCard({ asset, onBack }) {
           </p>
         )}
 
-        {/* Comments Section (Only show when not editing) */}
+        {/* Comments Section */}
         {!isEditing && <CommentsSection commentCount={13} />}
 
-        {/* SAVE / CANCEL(edit mode) */}
+        {/* Save / Cancel buttons for editing */}
         {isEditing && (
           <div className="flex items-center justify-center gap-4 mt-4">
             <button
@@ -406,14 +493,12 @@ export default function AssetDetailsCard({ asset, onBack }) {
 function VisibilitySlider({ visibility, onToggle }) {
   const isPublic = visibility === "public";
 
-  // Toggle logic on label click
   const handleClick = (val) => {
     onToggle(val);
   };
 
   return (
     <div className="relative w-36 h-10 bg-gray-700 rounded-full flex items-center px-2 cursor-pointer select-none">
-      {/* "Public" label */}
       <span
         onClick={() => handleClick("public")}
         className={`z-10 w-1/2 text-center text-sm transition-colors duration-200 ${
@@ -422,8 +507,6 @@ function VisibilitySlider({ visibility, onToggle }) {
       >
         Public
       </span>
-
-      {/* "Private" label */}
       <span
         onClick={() => handleClick("private")}
         className={`z-10 w-1/2 text-center text-sm transition-colors duration-200 ${
@@ -432,8 +515,6 @@ function VisibilitySlider({ visibility, onToggle }) {
       >
         Private
       </span>
-
-      {/* Sliding background highlight */}
       <div
         className={`absolute top-1 bottom-1 left-1 w-1/2 bg-white rounded-full shadow transform transition-transform duration-300 ${
           !isPublic ? "translate-x-16" : "translate-x-0"
@@ -447,7 +528,6 @@ function VisibilitySlider({ visibility, onToggle }) {
 function DeleteModal({ assetName, onConfirm, onCancel }) {
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-      {/* Modal box */}
       <div className="bg-white text-black rounded-md p-6 w-80 text-center">
         <h2 className="text-xl font-bold mb-2">
           Are you sure you want to delete <br />
