@@ -174,6 +174,48 @@ export async function getUser(user, email) {
 }
 
 /****************************************************************
+ * Function: getUserAssets
+ * Description: Sends a GET request to retrieve user assets from
+ *              the backend, optionally applying query parameters.
+ * Parameters:
+ *   - user (Object): Contains authentication details, including the ID token.
+ *   - queryParams (Object): An object containing optional query parameters.
+ * Returns:
+ *   - Object: The parsed JSON response from the API, which should
+ *             include a list of assets under the key "assets".
+ * Throws:
+ *   - Error if the API call fails or returns a non-OK response.
+ ****************************************************************/
+export async function getUserAssets(user, queryParams = {}) {
+  const defaultParams = { expand: "true" };
+  const params = { ...defaultParams, ...queryParams };
+  const queryString = new URLSearchParams(params).toString();
+
+  if (!user?.id_token) {
+    throw new Error("User authentication token is missing");
+  }
+
+  const response = await fetch(`${apiUrl}/v1/assets?${queryString}`, {
+    method: "GET",
+    headers: {
+      Authorization: `Bearer ${user.id_token}`,
+      "Content-Type": "application/json",
+    },
+  });
+
+  if (!response.ok) {
+    const errorDetails = await response.text();
+    throw new Error(
+      `API call failed with status ${response.status}: ${errorDetails}`,
+    );
+  }
+
+  // Directly return the parsed JSON (e.g. { status: 'ok', assets: [...] })
+  const data = await response.json();
+  return data;
+}
+
+/****************************************************************
  * Function: getAssetByID
  * Description: Sends a GET request to retrieve user's asset information
  *              from the backend using the provided asset ID.
@@ -281,5 +323,221 @@ export async function updatePrismaAssetInfo(user, uuid, updatedData) {
 
 export async function deletePrismaAsset(user, newInfo) {
   console.log("DELETE Asset Request Sent ");
+  return;
+}
+
+/***************************************************************
+ * Function: postCollection
+ * Description: Sends a POST request to create a collection
+ ****************************************************************/
+
+export async function postCollection(user, collectionInfo) {
+  console.log("Post a collection Request Sent ");
+
+  if (!user?.id_token) {
+    throw new Error("User authentication token is missing");
+  }
+
+  if (isDebug) {
+    console.log("Request to create a collection: ", collectionInfo);
+  }
+
+  try {
+    console.log("Calling Create a collection...");
+
+    const response = await fetch(`${apiUrl}/v1/collections`, {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${user.id_token}`, // Use the ID token for authentication
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify(collectionInfo), // Convert collectionInfo to a JSON string
+    });
+
+    if (!response.ok) {
+      const errorDetails = await response.text();
+      console.error(
+        `API call failed with status: ${response.status}, Details: ${errorDetails}`,
+      );
+      throw new Error(`API call failed with status: ${response.status}`);
+    }
+
+    const data = await response.json();
+    return { status: response.status, data };
+  } catch (error) {
+    console.error("Error during postCollection call:", error);
+    throw error;
+  }
+}
+
+/***************************************************************
+ * Function: updateCollectionDetails
+ * Description: Sends a PATCH request to update the collection info
+ ****************************************************************/
+export async function updateCollectionDetails(user, collectionId, details) {
+  console.log("Update a collection Request Sent ");
+
+  if (!user?.id_token) {
+    throw new Error("User authentication token is missing");
+  }
+
+  if (isDebug) {
+    console.log("Request to update a collection id: ", collectionId);
+    console.log("New info: ", details);
+  }
+
+  try {
+    const response = await fetch(`${apiUrl}/v1/collections/${collectionId}`, {
+      method: "PATCH",
+      headers: {
+        Authorization: `Bearer ${user.id_token}`,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify(details),
+    });
+
+    if (!response.ok) {
+      const errorDetails = await response.text();
+      throw new Error(
+        `API call failed with status ${response.status}: ${errorDetails}`,
+      );
+    }
+
+    return await response.json();
+  } catch (error) {
+    console.error("Error updating collection details:", error);
+    throw error;
+  }
+}
+
+/***************************************************************
+ * Function: addAssetsToCollection
+ * Description: Sends a PATCH request to add assets to a collection
+ ****************************************************************/
+export async function addAssetsToCollection(user, collectionId, assetIds) {
+  console.log("add assets to a collection Request Sent ");
+
+  if (!user?.id_token) {
+    throw new Error("User authentication token is missing");
+  }
+
+  if (isDebug) {
+    console.log("Request to add assets to a collection id: ", collectionId);
+    console.log("Asset uuid: ", assetIds);
+  }
+
+  // assetIds is an array of asset UUIDs to add.
+  try {
+    const response = await fetch(`${apiUrl}/v1/collections/${collectionId}`, {
+      method: "PATCH",
+      headers: {
+        Authorization: `Bearer ${user.id_token}`,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({ assetsToAdd: assetIds }),
+    });
+
+    if (isDebug) {
+      console.log("Add assets response: ", response);
+    }
+
+    if (!response.ok) {
+      const errorDetails = await response.text();
+      throw new Error(
+        `API call failed with status ${response.status}: ${errorDetails}`,
+      );
+    }
+
+    return await response.json();
+  } catch (error) {
+    console.error("Error adding assets to collection:", error);
+    throw error;
+  }
+}
+
+/***************************************************************
+ * Function: removeAssetsFromCollection
+ * Description: Sends a PATCH request to remove assets from a collection
+ ****************************************************************/
+export async function removeAssetsFromCollection(user, collectionId, assetIds) {
+  console.log("remove assets from a collection Request Sent ");
+
+  if (!user?.id_token) {
+    throw new Error("User authentication token is missing");
+  }
+
+  if (isDebug) {
+    console.log(
+      "Request to remove an assets from a collection id: ",
+      collectionId,
+    );
+    console.log("Asset uuid: ", assetIds);
+  }
+
+  // assetIds is an array of asset UUIDs to remove.
+  try {
+    const response = await fetch(`${apiUrl}/v1/collections/${collectionId}`, {
+      method: "PATCH",
+      headers: {
+        Authorization: `Bearer ${user.id_token}`,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({ assetsToRemove: assetIds }),
+    });
+
+    if (isDebug) {
+      console.log("Remove assets response: ", response);
+    }
+
+    if (!response.ok) {
+      const errorDetails = await response.text();
+      throw new Error(
+        `API call failed with status ${response.status}: ${errorDetails}`,
+      );
+    }
+
+    return await response.json();
+  } catch (error) {
+    console.error("Error removing assets from collection:", error);
+    throw error;
+  }
+}
+
+/***************************************************************
+ * Function: getCollection
+ * Description: Sends a GET request to all collections
+ ****************************************************************/
+
+export async function getCollection(userHash, id_token) {
+  console.log("getCollection was called (mock)");
+
+  return {
+    id: 1234,
+    name: "Mock Collection",
+    assets: [
+      {
+        id: "6eb60b81-d06f-490d-97b7-7abd2df668c3",
+      },
+    ],
+  };
+}
+
+/***************************************************************
+ * Function: getCollectionById
+ * Description: Sends a GET request to all collections
+ ****************************************************************/
+
+export async function getCollectionById(userHash, id_token, collId) {
+  console.error("getCollectionById was called");
+  return;
+}
+
+/***************************************************************
+ * Function: deleteCollectionById
+ * Description: Sends a DELETE request to all collections
+ ****************************************************************/
+
+export async function deleteCollectionById(userHash, id_token, collId) {
+  console.error("deleteCollectionById was called");
   return;
 }
