@@ -5,6 +5,7 @@ export default function AssetGrid({ assets }) {
 
   const handleAssetClick = (uuid) => {
     console.log("Clicked Asset UUID:", uuid);
+    sessionStorage.setItem("previousPage", window.location.href); // Store current page
     router.push(`/profile/${uuid}`); //Navigate to Asset Details
   };
 

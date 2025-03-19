@@ -14,6 +14,16 @@ import { WebStorageStateStore } from "oidc-client-ts";
 const logLevel = process.env.NEXT_PUBLIC_LOG_LEVEL; // Retrieve the log level for controlling console logs securely
 const isDebug = logLevel === "debug"; // Boolean flag to enable debug-level console logging
 
+const randomPlaceholder = () => {
+  const placeholders = [
+    "/placeholder/p01.png",
+    "/placeholder/p02.png",
+    "/placeholder/p03.png",
+    "/placeholder/p04.png",
+  ];
+  return placeholders[Math.floor(Math.random() * placeholders.length)];
+};
+
 const cognitoAuthConfig = {
   authority: `https://cognito-idp.${process.env.NEXT_PUBLIC_AWS_REGION}.amazonaws.com/${process.env.NEXT_PUBLIC_AWS_COGNITO_POOL_ID}`,
   client_id: process.env.NEXT_PUBLIC_AWS_COGNITO_CLIENT_ID,
@@ -43,6 +53,13 @@ const cognitoAuthConfig = {
       if (!_user) {
         console.error("Error getting user info");
         return;
+      }
+
+      //setting the random photo for a user
+      let storedProfilePicture = localStorage.getItem("profilePictureUrl");
+      if (!storedProfilePicture) {
+        storedProfilePicture = randomPlaceholder();
+        localStorage.setItem("profilePictureUrl", storedProfilePicture);
       }
 
       // Construct user data object from COGNITO
@@ -94,6 +111,7 @@ const cognitoAuthConfig = {
                 if (isDebug) {
                   console.log("Fetched user:", fetchedUser);
                 }
+
                 // Start constructing a display object using placeholder if fields are null
                 const userData = {
                   ...fetchedUser.data.user, // Assign fetch data
@@ -103,9 +121,8 @@ const cognitoAuthConfig = {
                   profileBio:
                     fetchedUser.data.user.profileBio ||
                     "Undefined. Still loading... Stay tuned.", //If no bio use placeholder txt
-                  profilePictureUrl:
-                    fetchedUser.data.user.profilePictureUrl ||
-                    "/placeholder/p03.png", // If no avatar url use p03.png as placeholder (dwarf)
+
+                  profilePictureUrl: storedProfilePicture,
                 };
 
                 // For debug purposes log the new userData obj
