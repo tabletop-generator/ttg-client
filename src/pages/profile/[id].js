@@ -17,8 +17,6 @@ function AssetDetails() {
     user?.collections ?? [],
   );
 
-  // const userCollections = user?.collections || [];
-
   useEffect(() => {
     if (!id || !auth.user?.id_token) {
       console.log("Asset ID or user token missing, skipping fetch.");
@@ -66,6 +64,10 @@ function AssetDetails() {
     );
   }
 
+  // Determine if this asset belongs to the current user.
+  const isMyAsset = asset.user?.hashedEmail === hashedEmail;
+  if (!isMyAsset) console.log("User is seeing a public asset");
+
   return (
     <AssetDetailsCard
       user={user}
@@ -73,6 +75,7 @@ function AssetDetails() {
       asset={asset}
       setUserCollections={setUserCollections}
       collections={userCollections}
+      isMyAsset={isMyAsset}
       onBack={() => router.back()}
     />
   );

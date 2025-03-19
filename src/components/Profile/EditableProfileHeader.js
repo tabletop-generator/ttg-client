@@ -1,54 +1,58 @@
+/* eslint-disable @next/next/no-img-element */
+import { updatePrismaUserInfo } from "@/api";
 import { useState } from "react";
 
 export default function EditableProfileHeader({
   username,
   profilePhoto,
   bio,
-  onSave,
+  userToken,
+  hashedEmail,
 }) {
   const [editableName, setEditableName] = useState(username);
   const [editableBio, setEditableBio] = useState(bio);
   const [selectedPhoto, setSelectedPhoto] = useState(profilePhoto);
-  const [isEditing, setIsEditing] = useState(true); // Start in edit mode
+  const [isEditing, setIsEditing] = useState(true);
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [isSaving, setIsSaving] = useState(false);
+  const [error, setError] = useState(null);
 
-  const [isModalOpen, setIsModalOpen] = useState(false); // Modal visibility state
+  const handleSave = async () => {
+    setIsSaving(true);
+    setError(null);
 
-  const handlePhotoChange = (event) => {
-    const file = event.target.files[0];
-    if (file) {
-      const validImageTypes = ["image/jpeg", "image/png", "image/gif"];
-      if (!validImageTypes.includes(file.type)) {
-        alert("Please upload a valid image file (JPEG, PNG, or GIF).");
-        return;
-      }
+    const newInfo = {
+      displayName: editableName,
+      profileBio: editableBio,
+    };
 
-      const imageUrl = URL.createObjectURL(file);
-      setSelectedPhoto(imageUrl);
-      setIsModalOpen(false);
+    try {
+      const response = await updatePrismaUserInfo(
+        userToken,
+        hashedEmail,
+        newInfo,
+      );
+
+      console.log("User updated successfully:", response);
+      setIsEditing(false);
+      window.location.reload();
+    } catch (err) {
+      console.error("Error updating user:", err);
+      setError("There was an error updating your profile. Please try again.");
+    } finally {
+      setIsSaving(false);
     }
-  };
-
-  const handleSelectDefaultPhoto = (photoUrl) => {
-    setSelectedPhoto(photoUrl);
-    setIsModalOpen(false);
   };
 
   return isEditing ? (
     <div className="text-center mb-6">
       {/* Profile Photo */}
       <div className="relative">
-        {/* eslint-disable-next-line @next/next/no-img-element */}
         <img
           src={selectedPhoto}
           alt={`${username}'s profile`}
           className="w-32 h-32 mx-auto rounded-full shadow-2xl mb-4"
         />
-        <button
-          onClick={() => setIsModalOpen(true)}
-          className="mt-2 px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-500"
-        >
-          Edit Photo
-        </button>
       </div>
 
       {/* Editable Username */}
@@ -72,26 +76,26 @@ export default function EditableProfileHeader({
       {/* Save and Cancel Buttons */}
       <div className="flex justify-center mt-4 gap-2">
         <button
-          onClick={() => {
-            onSave(editableName, editableBio, selectedPhoto);
-            setIsEditing(false); // Exit edit mode after saving
-          }}
+          onClick={handleSave}
+          disabled={isSaving}
           className="px-4 py-2 bg-green-600 text-white rounded-md hover:bg-green-500"
         >
-          Save
+          {isSaving ? "Saving..." : "Save"}
         </button>
         <button
           onClick={() => {
             setEditableName(username);
             setEditableBio(bio);
             setSelectedPhoto(profilePhoto);
-            setIsEditing(false); // Exit edit mode and go back to view mode
+            setIsEditing(false);
           }}
           className="px-4 py-2 bg-red-600 text-white rounded-md hover:bg-red-500"
         >
           Cancel
         </button>
       </div>
+
+      {error && <p className="text-red-500 mt-2">{error}</p>}
 
       {/* Modal for Selecting Photo */}
       {isModalOpen && (
@@ -101,28 +105,30 @@ export default function EditableProfileHeader({
               Forge Your Legend Choose Avatar
             </h3>
             <div className="grid grid-cols-3 gap-4 mb-4">
-              {/* Default Dwarf Photo */}
-              {/* eslint-disable-next-line @next/next/no-img-element */}
               <img
                 src="/placeholder/p03.png"
                 alt="Dwarf"
                 className="w-24 h-24 rounded-full cursor-pointer hover:opacity-75"
-                onClick={() => handleSelectDefaultPhoto("/placeholder/p03.png")}
+                onClick={() => setSelectedPhoto("/placeholder/p03.png")}
               />
-              {/* Default Bard Photo */}
-              {/* eslint-disable-next-line @next/next/no-img-element */}
               <img
                 src="/placeholder/p02.png"
                 alt="Bard"
                 className="w-24 h-24 rounded-full cursor-pointer hover:opacity-75"
-                onClick={() => handleSelectDefaultPhoto("/placeholder/p02.png")}
+                onClick={() => setSelectedPhoto("/placeholder/p02.png")}
               />
-              {/* Upload Button */}
               <div className="flex flex-col items-center justify-center">
                 <input
                   type="file"
                   accept="image/*"
-                  onChange={handlePhotoChange}
+                  onChange={(e) => {
+                    const file = e.target.files[0];
+                    if (file) {
+                      const reader = new FileReader();
+                      reader.onload = (e) => setSelectedPhoto(e.target.result);
+                      reader.readAsDataURL(file);
+                    }
+                  }}
                   className="hidden"
                   id="upload-photo"
                 />
@@ -148,7 +154,6 @@ export default function EditableProfileHeader({
     <div className="text-center mb-6">
       {/* Profile Photo */}
       <div className="relative">
-        {/* eslint-disable-next-line @next/next/no-img-element */}
         <img
           src={profilePhoto}
           alt={`${username}'s profile`}
@@ -162,7 +167,7 @@ export default function EditableProfileHeader({
 
       {/* Edit Button */}
       <button
-        onClick={() => setIsEditing(true)} // Enter edit mode
+        onClick={() => setIsEditing(true)}
         className="mt-4 px-4 py-2 bg-indigo-600 text-white rounded-md hover:bg-indigo-500"
       >
         Edit Profile

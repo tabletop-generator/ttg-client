@@ -11,11 +11,12 @@ import CommentsSection from "@/components/Profile/CommentsSection";
 import CreateCollectionForm from "@/components/Profile/CreateCollectionForm";
 import styles from "@/styles/AssetDetailsCard.module.css"; // The CSS module
 import { Heart, MoreHorizontal, Share2, Star } from "lucide-react";
+import { useRouter } from "next/router";
 import { useEffect, useRef, useState } from "react";
 import { useAuth } from "react-oidc-context";
-
 export default function AssetDetailsCard({
   user,
+  isMyAsset,
   hashedEmail,
   asset,
   userCollections,
@@ -24,9 +25,10 @@ export default function AssetDetailsCard({
 }) {
   const auth = useAuth();
   const cognitoUser = auth.user;
-
+  const router = useRouter();
   const userColl = user?.collections ? [...user.collections] : [];
 
+  console.log("Is this my asset:", isMyAsset);
   // Core asset states
   const [visibility, setVisibility] = useState(asset?.visibility || "private");
   const [name, setName] = useState(asset?.name || "Unnamed");
@@ -42,9 +44,9 @@ export default function AssetDetailsCard({
   const [showCollectionDropdown, setShowCollectionDropdown] = useState(false);
   const [likes, setLikes] = useState(asset?.likes || 0);
   const [isLiked, setIsLiked] = useState(false);
-  const [copied, setCopied] = useState(false);
+  const [shareMessage, setShareMessage] = useState("");
+  const [shareMessageType, setShareMessageType] = useState("");
   const [showDeleteModal, setShowDeleteModal] = useState(false);
-
   const [isInCollection, setIsInCollection] = useState(false);
 
   const defaultImage = "/placeholder/p01.png"; // fallback image
@@ -77,13 +79,52 @@ export default function AssetDetailsCard({
 
   // ---- HANDLERS ----
   const handleShare = () => {
+    if (visibility === "private") {
+      setShareMessage(
+        "Your asset is private, can't share private secrets. Make it public and try again.",
+      );
+      setShareMessageType("error");
+      setTimeout(() => {
+        setShareMessage("");
+        setShareMessageType("");
+      }, 5000);
+      return;
+    }
+
     navigator.clipboard
       .writeText(window.location.href)
       .then(() => {
-        setCopied(true);
-        setTimeout(() => setCopied(false), 2000);
+        setShareMessage("Copied to Clipboard!");
+        setShareMessageType("success");
+        setTimeout(() => {
+          setShareMessage("");
+          setShareMessageType("");
+        }, 2000);
       })
-      .catch((err) => console.error("Failed to copy:", err));
+      .catch((err) => {
+        console.error("Failed to copy:", err);
+        setShareMessage("Failed to copy");
+        setShareMessageType("error");
+        setTimeout(() => {
+          setShareMessage("");
+          setShareMessageType("");
+        }, 2000);
+      });
+  };
+
+  const handleBack = () => {
+    if (!isMyAsset) {
+      const previousPage = sessionStorage.getItem("previousPage");
+
+      if (previousPage) {
+        router.push(previousPage); // Go to stored page
+        sessionStorage.removeItem("previousPage"); // Clear it after use
+      } else {
+        router.push("/profile?tab=assets"); // Default fallback
+      }
+    } else {
+      router.push("/profile?tab=assets"); // Always return to user's assets
+    }
   };
 
   const handleStar = () => {
@@ -190,8 +231,9 @@ export default function AssetDetailsCard({
   const handleSave = async () => {
     const newInfo = { name, description, visibility };
     console.log("Saving asset with info:", newInfo);
+
     try {
-      await updatePrismaAssetInfo(user, asset.uuid, newInfo);
+      await updatePrismaAssetInfo(cognitoUser, asset.uuid, newInfo);
       asset.visibility = visibility;
       setIsEditing(false);
     } catch (error) {
@@ -212,7 +254,7 @@ export default function AssetDetailsCard({
 
   const handleDeleteConfirm = async () => {
     try {
-      await deletePrismaAsset(asset.id);
+      await deletePrismaAsset(cognitoUser, asset.uuid);
       onBack();
       setTimeout(() => {
         window.location.reload();
@@ -268,8 +310,10 @@ export default function AssetDetailsCard({
             <span className="text-white">{likes}</span>
           </div>
         </div>
-
-        {/* Asset Type and Created Date */}
+        {/* Created By, Asset Type and Created Date */}
+        <p className="text-gray-400 mb-2 capitalize">
+          <strong>Created By:</strong> {asset.creatorName}
+        </p>
         <p className="text-gray-400 mb-2 capitalize">
           <strong>Type:</strong> {asset.type || "Unknown Type"}
         </p>
@@ -279,7 +323,12 @@ export default function AssetDetailsCard({
             ? new Date(asset.createdAt).toISOString().split("T")[0]
             : "N/A"}
         </p>
-
+        {!isEditing && (
+          <p className="text-gray-400 mb-4">
+            <strong>Visibility:</strong>{" "}
+            <span className="text-white capitalize">{visibility}</span>
+          </p>
+        )}
         {/* Buttons: Like, Star (for collection), Share, Edit */}
         <div className="flex items-center justify-center gap-4 mb-6">
           {!isEditing && (
@@ -355,19 +404,27 @@ export default function AssetDetailsCard({
               <button
                 onClick={handleShare}
                 className={`w-10 h-10 ${styles.roundedButton} ${
-                  copied ? styles.bgGreenButton : styles.bgGrayButton
+                  shareMessageType === "success"
+                    ? styles.bgGreenButton
+                    : styles.bgGrayButton
                 }`}
               >
                 <Share2 className="w-5 h-5 text-white fill-current" />
               </button>
-              {copied && (
-                <div className="absolute bottom-full mb-2 left-1/2 -translate-x-1/2 transform px-3 py-1 bg-white text-black text-sm rounded shadow-lg z-10 whitespace-nowrap">
-                  Copied to Clipboard!
+              {shareMessage && (
+                <div
+                  className={`absolute bottom-full mb-2 left-1/2 -translate-x-1/2 transform px-3 py-1 text-sm rounded shadow-lg z-10 whitespace-nowrap ${
+                    shareMessageType === "error"
+                      ? "bg-red-500 text-white"
+                      : "bg-green-500 text-white"
+                  }`}
+                >
+                  {shareMessage}
                   <div
                     className="absolute bottom-0 left-1/2 transform translate-y-full -translate-x-1/2 w-0 h-0
-                      border-l-[6px] border-l-transparent
-                      border-r-[6px] border-r-transparent
-                      border-t-[6px] border-t-white"
+            border-l-[6px] border-l-transparent
+            border-r-[6px] border-r-transparent
+            border-t-[6px] border-t-white"
                   ></div>
                 </div>
               )}
@@ -375,7 +432,7 @@ export default function AssetDetailsCard({
           )}
 
           {/* 3-dot Edit Menu */}
-          {!isEditing && (
+          {!isEditing && isMyAsset && (
             <div className="relative" ref={dropdownRef}>
               <button
                 onClick={() => setMenuOpen(!menuOpen)}
@@ -433,13 +490,6 @@ export default function AssetDetailsCard({
           </div>
         )}
 
-        {!isEditing && (
-          <p className="text-gray-400 mb-4">
-            <strong>Visibility:</strong>{" "}
-            <span className="text-white capitalize">{visibility}</span>
-          </p>
-        )}
-
         {/* Comments Section */}
         {!isEditing && <CommentsSection commentCount={13} />}
 
@@ -464,7 +514,7 @@ export default function AssetDetailsCard({
         {/* Back button */}
         {!isEditing && (
           <button
-            onClick={onBack}
+            onClick={handleBack}
             className="mt-6 px-4 py-2 bg-indigo-600 text-white rounded-md hover:bg-indigo-500"
           >
             Back
