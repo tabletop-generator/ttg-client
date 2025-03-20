@@ -1,4 +1,10 @@
 import { getUser, postUser } from "@/api";
+import {
+  setFetchUserError,
+  setRetryFunction,
+  showRetryBanner,
+} from "@/utils/retryHandler";
+
 import { WebStorageStateStore } from "oidc-client-ts";
 // See https://authts.github.io/oidc-client-ts/index.html
 /**
@@ -7,6 +13,16 @@ import { WebStorageStateStore } from "oidc-client-ts";
 
 const logLevel = process.env.NEXT_PUBLIC_LOG_LEVEL; // Retrieve the log level for controlling console logs securely
 const isDebug = logLevel === "debug"; // Boolean flag to enable debug-level console logging
+
+const randomPlaceholder = () => {
+  const placeholders = [
+    "/placeholder/p01.png",
+    "/placeholder/p02.png",
+    "/placeholder/p03.png",
+    "/placeholder/p04.png",
+  ];
+  return placeholders[Math.floor(Math.random() * placeholders.length)];
+};
 
 const cognitoAuthConfig = {
   authority: `https://cognito-idp.${process.env.NEXT_PUBLIC_AWS_REGION}.amazonaws.com/${process.env.NEXT_PUBLIC_AWS_COGNITO_POOL_ID}`,
@@ -37,6 +53,13 @@ const cognitoAuthConfig = {
       if (!_user) {
         console.error("Error getting user info");
         return;
+      }
+
+      //setting the random photo for a user
+      let storedProfilePicture = localStorage.getItem("profilePictureUrl");
+      if (!storedProfilePicture) {
+        storedProfilePicture = randomPlaceholder();
+        localStorage.setItem("profilePictureUrl", storedProfilePicture);
       }
 
       // Construct user data object from COGNITO
@@ -76,45 +99,54 @@ const cognitoAuthConfig = {
            * Begin the process of fetching user information
            **************************************************/
 
-          try {
-            // Fetch full user data, pass _user for token and hashedEmail
-            const fetchedUser = await getUser(_user, hashedEmail);
+          const fetchUserData = async () => {
+            try {
+              setFetchUserError(false); // Reset error flag before retry
 
-            if (fetchedUser) {
-              // If debug display the fetched user
-              if (isDebug) {
-                console.log("Fetched user:", fetchedUser);
+              // Fetch full user data, pass _user for token and hashedEmail
+              const fetchedUser = await getUser(_user, hashedEmail);
+
+              if (fetchedUser) {
+                // If debug display the fetched user
+                if (isDebug) {
+                  console.log("Fetched user:", fetchedUser);
+                }
+
+                // Start constructing a display object using placeholder if fields are null
+                const userData = {
+                  ...fetchedUser.data.user, // Assign fetch data
+                  displayName:
+                    fetchedUser.data.user.displayName ||
+                    _user?.profile?.["cognito:username"], // If no display name use COGNITO user name
+                  profileBio:
+                    fetchedUser.data.user.profileBio ||
+                    "Undefined. Still loading... Stay tuned.", //If no bio use placeholder txt
+
+                  profilePictureUrl: storedProfilePicture,
+                };
+
+                // For debug purposes log the new userData obj
+                if (isDebug) {
+                  console.log("Stored user:", userData);
+                }
+
+                // Store the userData obj in local storage to be used in src/context/UserContext.js so user
+                // will stay consistent through all app areas
+                localStorage.setItem("userInfo", JSON.stringify(userData));
+
+                // Trigger the custom event
+                window.dispatchEvent(new Event("storage"));
               }
-
-              // Start constructing a display object using placeholder if fields are null
-              const userData = {
-                ...fetchedUser.data.user, // Assign fetch data
-                displayName:
-                  fetchedUser.data.user.displayName ||
-                  _user?.profile?.["cognito:username"], // If no display name use COGNITO user name
-                profileBio:
-                  fetchedUser.data.user.profileBio ||
-                  "Undefined. Still loading... Stay tuned.", //If no bio use placeholder txt
-                profilePictureUrl:
-                  fetchedUser.data.user.profilePictureUrl ||
-                  "/placeholder/p03.png", // If no avatar url use p03.png as placeholder (dwarf)
-              };
-
-              // For debug purposes log the new userData obj
-              if (isDebug) {
-                console.log("Stored user:", userData);
-              }
-
-              // Store the userData obj in local storage to be used in src/context/UserContext.js so user
-              // will stay consistent through all app areas
-              localStorage.setItem("userInfo", JSON.stringify(userData));
-
-              // Trigger the custom event
-              window.dispatchEvent(new Event("storage"));
+            } catch (error) {
+              console.error("ERROR fetching user data:", error);
+              setFetchUserError(true);
+              //showRetryButton();
+              showRetryBanner(); // Display the retry banner
             }
-          } catch (error) {
-            console.error("ERROR fetching user data: ", error);
-          }
+          };
+
+          setRetryFunction(fetchUserData); // Assign function for retry
+          fetchUserData(); // Initial attempt
         } else {
           console.warn(
             "No hashed email returned from API response, skipping fetching user",
@@ -128,13 +160,10 @@ const cognitoAuthConfig = {
       }
     } catch (error) {
       console.error("Error in onSigninCallback:", error.message);
-      if (error.response) {
-        console.error(
-          "API responded with:",
-          error.response.status,
-          error.response.data,
-        );
-      }
+      setFetchUserError(true);
+      // Show the banner so user can try again
+      showRetryBanner();
+      return Promise.resolve();
     }
 
     return Promise.resolve(); //Ensures function always resolves

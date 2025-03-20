@@ -1,17 +1,21 @@
 import { getAssetByID } from "@/api";
 import AssetDetailsCard from "@/components/Profile/AssetDetailsCard";
+import { useUser } from "@/context/UserContext";
 import { useRouter } from "next/router";
 import { useEffect, useState } from "react";
 import { useAuth } from "react-oidc-context";
-
 function AssetDetails() {
   const router = useRouter();
   const { id } = router.query;
   const auth = useAuth();
+  const { user, hashedEmail } = useUser();
 
   const [asset, setAsset] = useState(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [userCollections, setUserCollections] = useState(
+    user?.collections ?? [],
+  );
 
   useEffect(() => {
     if (!id || !auth.user?.id_token) {
@@ -60,10 +64,18 @@ function AssetDetails() {
     );
   }
 
+  // Determine if this asset belongs to the current user.
+  const isMyAsset = asset.user?.hashedEmail === hashedEmail;
+  if (!isMyAsset) console.log("User is seeing a public asset");
+
   return (
     <AssetDetailsCard
-      user={auth.user}
+      user={user}
+      hashedEmail={hashedEmail}
       asset={asset}
+      setUserCollections={setUserCollections}
+      collections={userCollections}
+      isMyAsset={isMyAsset}
       onBack={() => router.back()}
     />
   );
