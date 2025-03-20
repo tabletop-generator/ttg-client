@@ -109,4 +109,3 @@ function SearchConsumer({ setGridPosition, setShowFeatures }) {
 Home.protected = false;
 
 export default Home;
-b;
