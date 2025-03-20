@@ -4,17 +4,18 @@ import { useEffect, useState } from "react";
 import GradientOverlay from "../components/GradientTransitionLarge";
 import PinterestGrid from "../components/PinterestGrid";
 import RotatingBackground from "../components/RotatingBackground";
-import SearchBar, { useSearch } from "../components/SearchBar";
+import SearchBar from "../components/SearchBar";
 import SearchFeatures from "../components/SearchFeatures";
 
 function Home() {
-  const [gridPosition, setGridPosition] = useState(0);
+  // Start with a 100px offset to make room for search features
+  const [gridPosition, setGridPosition] = useState(100);
 
   // Create ref for handling escape key to close search
   useEffect(() => {
     const handleEscKey = (e) => {
       if (e.key === "Escape") {
-        // You could add logic here to close search features
+        // You could add logic here to cancel search
       }
     };
 
@@ -23,86 +24,47 @@ function Home() {
   }, []);
 
   return (
-    <>
-      {/* Hero Section with Background and Gradient - Constrained height */}
-      <div className="relative px-8 h-[50vh]">
+    <div className="relative isolate">
+      {/* Background and Gradient - Lowest layer */}
+      <div className="relative z-0">
         {/* Background Image */}
-        <RotatingBackground />
-
-        {/* Gradient Overlay - Modified to ensure it doesn't extend down too far */}
-        <GradientOverlay height="50vh" breakpoint1={40} breakpoint2={90} />
-
-        {/* Content positioned over the background/gradient */}
-        <div className="relative z-20 flex flex-col items-center space-y-8">
-          {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img
-            src="/logo_hero.png"
-            alt="TTG logo"
-            className="w-auto h-auto max-w-xs md:max-w-md mt-[calc(15vh+50px)]"
-          />
-          <div className="w-full flex justify-center">
-            <SearchBarWithFeatures setGridPosition={setGridPosition} />
-          </div>
+        <div className="relative px-8 h-[50vh]">
+          <RotatingBackground />
+          <GradientOverlay height="50vh" breakpoint1={40} breakpoint2={90} />
         </div>
       </div>
 
-      {/* Content below hero section (Pinterest Grid) - With animation */}
+      {/* Pinterest Grid - Middle layer */}
       <div
-        className="bg-black text-white pt-0 -mt-12 relative z-30 transition-all duration-500 ease-out"
+        className="bg-black text-white pt-0 -mt-12 relative z-10 transition-all duration-500 ease-out"
         style={{
           transform: `translateY(${gridPosition}px)`,
         }}
       >
         <PinterestGrid />
       </div>
-    </>
-  );
-}
 
-// Internal component to manage search state and features
-function SearchBarWithFeatures({ setGridPosition }) {
-  const [showFeatures, setShowFeatures] = useState(false);
+      {/* Search UI - Top layer with proper stacking context */}
+      <div className="absolute top-0 left-0 w-full z-20">
+        <div className="relative px-8 flex flex-col items-center pt-[15vh] pb-4">
+          {/* Logo */}
+          <img
+            src="/logo_hero.png"
+            alt="TTG logo"
+            className="w-auto h-auto max-w-xs md:max-w-md mb-8"
+          />
 
-  return (
-    <div className="w-full flex flex-col items-center">
-      <SearchBar />
-
-      {/* Use the search context created in SearchBar */}
-      <SearchConsumer
-        setGridPosition={setGridPosition}
-        setShowFeatures={setShowFeatures}
-      />
-
-      {/* Conditionally render features */}
-      {showFeatures && <SearchFeatures isSearchActive={showFeatures} />}
+          {/* Search Components */}
+          <div className="w-full flex justify-center">
+            <div className="w-full flex flex-col items-center space-y-4">
+              <SearchBar />
+              <SearchFeatures />
+            </div>
+          </div>
+        </div>
+      </div>
     </div>
   );
-}
-
-// Component to consume search context
-function SearchConsumer({ setGridPosition, setShowFeatures }) {
-  const { isSearchActive } = useSearch();
-
-  // When search state changes, update the grid position
-  useEffect(() => {
-    if (isSearchActive) {
-      // Move grid down when search is active
-      setGridPosition(100);
-      setShowFeatures(true);
-    } else {
-      // Move grid back up when search becomes inactive
-      setGridPosition(0);
-
-      // Hide features with a delay to allow animation
-      const timeout = setTimeout(() => {
-        setShowFeatures(false);
-      }, 500);
-
-      return () => clearTimeout(timeout);
-    }
-  }, [isSearchActive, setGridPosition, setShowFeatures]);
-
-  return null; // This component doesn't render anything
 }
 
 // Mark page as not requiring authentication
