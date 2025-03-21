@@ -3,7 +3,7 @@
 import cognitoAuthConfig from "@/cognitoAuthConfig";
 import Layout from "@/components/Layout.jsx";
 import withAuth from "@/components/auth/withAuth";
-import { UserProvider } from "@/context/UserContext"; // Import the User Context
+import { UserProvider } from "@/context/UserContext";
 import "@/styles/tailwind.css";
 import { AuthProvider } from "react-oidc-context";
 
@@ -14,7 +14,6 @@ export default function App({ Component, pageProps }) {
   return (
     <AuthProvider {...cognitoAuthConfig}>
       <UserProvider>
-        {/* Wrap the entire app */}
         <Layout>
           <WrappedComponent {...pageProps} />
         </Layout>

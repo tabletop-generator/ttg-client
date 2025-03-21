@@ -10,6 +10,7 @@ import {
   MenuItems,
 } from "@headlessui/react";
 import { Bars3Icon, BellIcon, XMarkIcon } from "@heroicons/react/24/outline";
+import NextLink from "next/link";
 import { useRouter } from "next/router";
 import { Log } from "oidc-client-ts";
 import { useEffect, useMemo, useState } from "react";
@@ -168,7 +169,9 @@ export default function Layout({ children }) {
               <div className="flex h-16 items-center justify-between">
                 <div className="flex items-center">
                   <div className="shrink-0">
-                    <img alt="TTG" src="/logo_256.png" className="size-16" />
+                    <NextLink href="/">
+                      <img alt="TTG" src="/logo_256.png" className="size-16" />
+                    </NextLink>
                   </div>
                   <div className="hidden md:block">
                     <div className="ml-10 flex items-baseline space-x-4">
