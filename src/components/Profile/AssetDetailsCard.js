@@ -480,7 +480,7 @@ export default function AssetDetailsCard({
           <p className="text-gray-300 leading-relaxed mb-4">{description}</p>
         )}
 
-        {/* Visibility Controls */}
+        {/* Asset Visibility Controls */}
         {isEditing && (
           <div className="flex items-center justify-center mb-4">
             <VisibilitySlider
