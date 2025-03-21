@@ -3,34 +3,29 @@
 import CharacterForm from "@/components/CharacterForm";
 import LocationsForm from "@/components/LocationForm";
 import MapForm from "@/components/MapForm";
-import OptionCard from "@/components/OptionCard";
 import QuestForm from "@/components/QuestForm";
 import { useState } from "react";
 
-const options = [
+const createOptions = [
   {
     id: "characters",
-    title: "Characters",
-    description: "Generate unique characters for your tabletop campaigns.",
-    image: "/placeholder/card_character.png",
+    title: "Character",
+    image: "/placeholder/card_character.png", // Use the first image
   },
   {
     id: "locations",
-    title: "Locations",
-    description: "Create breathtaking locations for your story.",
-    image: "/placeholder/card_environment.png",
+    title: "Environment",
+    image: "/placeholder/card_environment.png", // Use the second image
   },
   {
     id: "quests",
-    title: "Quests",
-    description: "Design epic quests to immerse your players.",
-    image: "/placeholder/card_quest.png",
+    title: "Quest",
+    image: "/placeholder/card_quest.png", // Use the third image
   },
   {
     id: "maps",
-    title: "Maps",
-    description: "Generate detailed maps for exploration.",
-    image: "/placeholder/card_map.png",
+    title: "TTG Map",
+    image: "/placeholder/card_map.png", // Use the fourth image
   },
 ];
 
@@ -46,36 +41,56 @@ function CreatePage() {
   };
 
   return (
-    <div className="p-6">
-      {/* characters */}
+    <div className="pt-4 pb-10 min-h-[calc(100vh-120px)] flex flex-col justify-center items-center">
+      {/* Conditional rendering based on selection */}
       {selectedOption === "characters" ? (
-        <CharacterForm onBack={handleGoBack} />
-      ) : /* locations */
-      selectedOption === "locations" ? (
-        <LocationsForm onBack={handleGoBack} />
-      ) : /* maps */
-      selectedOption === "maps" ? (
-        <MapForm onBack={handleGoBack} />
-      ) : /* quests */
-      selectedOption === "quests" ? (
-        <QuestForm onBack={handleGoBack} />
+        <div className="w-full max-w-5xl mx-auto px-6">
+          <CharacterForm onBack={handleGoBack} />
+        </div>
+      ) : selectedOption === "locations" ? (
+        <div className="w-full max-w-5xl mx-auto px-6">
+          <LocationsForm onBack={handleGoBack} />
+        </div>
+      ) : selectedOption === "maps" ? (
+        <div className="w-full max-w-5xl mx-auto px-6">
+          <MapForm onBack={handleGoBack} />
+        </div>
+      ) : selectedOption === "quests" ? (
+        <div className="w-full max-w-5xl mx-auto px-6">
+          <QuestForm onBack={handleGoBack} />
+        </div>
       ) : (
-        <>
+        <div className="w-full max-w-[95%] lg:max-w-[85%] xl:max-w-[80%] mx-auto px-4">
           <h1 className="text-3xl font-bold text-center mb-8">
             Choose What to Create
           </h1>
-          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
-            {options.map((option) => (
-              <OptionCard
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+            {createOptions.map((option) => (
+              <div
                 key={option.id}
-                title={option.title}
-                description={option.description}
-                image={option.image}
-                onSelect={() => handleSelect(option.id)} // Pass the selected option's ID
-              />
+                className="relative rounded-lg overflow-hidden cursor-pointer transform transition-transform hover:scale-105 shadow-lg"
+                onClick={() => handleSelect(option.id)}
+              >
+                {/* Image Card */}
+                <div className="relative aspect-[2/1] rounded-lg overflow-hidden">
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                  <img
+                    src={option.image}
+                    alt={option.title}
+                    className="w-full h-full object-cover"
+                  />
+                  {/* Overlay gradient */}
+                  <div className="absolute inset-0 bg-gradient-to-t from-black/80 to-transparent"></div>
+
+                  {/* Text overlay */}
+                  <div className="absolute bottom-4 right-6 text-white text-4xl font-bold">
+                    {option.title}
+                  </div>
+                </div>
+              </div>
             ))}
           </div>
-        </>
+        </div>
       )}
     </div>
   );
