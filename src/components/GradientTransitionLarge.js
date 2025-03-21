@@ -1,9 +1,7 @@
-import React from "react";
-
 export default function GradientOverlay({
-  height = "100vh", // Default height of the div
+  height = "50vh", // Match the height of the background image
   breakpoint1 = 40, // 40% solid black by default
-  breakpoint2 = 60, // 60% transitions to 0% opacity
+  breakpoint2 = 100, // 100% transitions to 0% opacity
   className = "", // Additional classes for styling
 }) {
   // Validate breakpoints
@@ -19,12 +17,15 @@ export default function GradientOverlay({
     return null;
   }
 
-  // Generate gradient stops
-  const gradient = `linear-gradient(to top, rgba(0, 0, 0, 1) ${breakpoint1}%, rgba(0, 0, 0, 0) ${breakpoint2}%)`;
+  // Generate gradient stops - from bottom to top for better overlay effect
+  const gradient = `linear-gradient(to top, 
+    rgba(0, 0, 0, 1) ${breakpoint1}%, 
+    rgba(0, 0, 0, 0.7) ${breakpoint1 + 20}%, 
+    rgba(0, 0, 0, 0) ${breakpoint2}%)`;
 
   return (
     <div
-      className={`pointer-events-none absolute top-0 left-0 w-full z-1 ${className}`}
+      className={`pointer-events-none absolute top-0 left-0 w-full z-10 ${className}`}
       style={{
         height,
         background: gradient,
