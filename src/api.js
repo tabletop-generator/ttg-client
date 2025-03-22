@@ -728,3 +728,53 @@ export async function deleteCollectionById(user, collectionId) {
     throw error;
   }
 }
+
+/****************************************************************
+ * Function: getPublicAssets
+ * Description: Fetches all public assets from the backend.
+ * Parameters:
+ *   - user (Object): Contains authentication details, including the ID token.
+ * Returns:
+ *   - Object: The assets retrieved from the API.
+ * Throws:
+ *   - Error if the API call fails or returns a non-OK response.
+ ****************************************************************/
+export async function getPublicAssets(user) {
+  try {
+    const url = `${apiUrl}/v1/assets?visibility=public&expand=true`;
+
+    const headers = {
+      "Content-Type": "application/json",
+    };
+
+    // Add auth token if user is provided and authenticated
+    if (user?.id_token) {
+      headers.Authorization = `Bearer ${user.id_token}`;
+    }
+
+    const response = await fetch(url, {
+      method: "GET",
+      headers,
+    });
+
+    if (!response.ok) {
+      const errorDetails = await response.text();
+      console.error(
+        `API call failed with status: ${response.status}, Details: ${errorDetails}`,
+      );
+      throw new Error(`API call failed with status: ${response.status}`);
+    }
+
+    const data = await response.json();
+    console.log("public assets", data);
+
+    // Return the status and assets from the API response
+    return {
+      status: data.status,
+      assets: data.assets,
+    };
+  } catch (error) {
+    console.error("Error during getPublicAssets call:", error);
+    throw error;
+  }
+}

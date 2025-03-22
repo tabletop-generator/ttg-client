@@ -1,13 +1,17 @@
 // src/components/LocationForm.js
 
 import { getAssetImage } from "@/api";
+import { useUser } from "@/context/UserContext";
 import logger from "@/utils/logger";
+import { useRouter } from "next/router"; // Added router import
 import { useState } from "react";
 import { useAuth } from "react-oidc-context";
-import GeneratedAsset from "./GeneratedAsset";
 
 export default function LocationForm({ onBack }) {
   const auth = useAuth();
+  const { user, hashedEmail } = useUser();
+  const router = useRouter(); // Initialize router for navigation
+
   const [formData, setFormData] = useState({
     name: "",
     type: "",
@@ -24,7 +28,6 @@ export default function LocationForm({ onBack }) {
   });
 
   const [isSubmitted, setIsSubmitted] = useState(false);
-  const [generatedResult, setGeneratedResult] = useState(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
   const [missingFields, setMissingFields] = useState([]);
@@ -87,34 +90,31 @@ export default function LocationForm({ onBack }) {
       );
       logger.info("API Response:", response);
 
-      // 5. Store the resulting asset in state
-      setGeneratedResult({
-        id: response?.asset?.id,
-        name: response?.asset?.name,
-        imageUrl: response?.asset?.imageUrl,
-        visibility: response?.asset?.visibility,
-        description: response?.asset?.description,
-      });
+      console.log("Location creation response:", response);
+
+      // Extract the UUID from the response (not the numeric ID)
+      const assetUuid = response?.asset?.uuid;
+
+      if (!assetUuid) {
+        setError("Failed to get asset UUID from the response");
+        setLoading(false);
+        return;
+      }
+
+      // Store the current page in session storage for back button functionality
+      sessionStorage.setItem("previousPage", "/create");
+
+      // Redirect directly to the asset's profile page using the UUID
+      console.log(`Redirecting to /profile/${assetUuid}`);
+      router.push(`/profile/${assetUuid}`);
     } catch (err) {
       const submissionError =
         "Failed to generate the location. Please try again.";
       setError(submissionError);
       logger.error(submissionError, err.message);
-    } finally {
       setLoading(false);
-      logger.info("Form submission process complete.");
     }
   };
-
-  // If a location is already generated, display it
-  if (generatedResult && generatedResult.id && generatedResult.imageUrl) {
-    return (
-      <GeneratedAsset
-        data={generatedResult}
-        onBack={() => setGeneratedResult(null)}
-      />
-    );
-  }
 
   // Otherwise, display the form
   return (

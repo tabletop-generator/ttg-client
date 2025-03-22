@@ -1,11 +1,14 @@
 import { getAssetImage } from "@/api";
-import GeneratedAsset from "@/components/GeneratedAsset";
+import { useUser } from "@/context/UserContext";
 import logger from "@/utils/logger";
+import { useRouter } from "next/router";
 import { useState } from "react";
 import { useAuth } from "react-oidc-context";
 
 export default function QuestForm({ onBack }) {
   const auth = useAuth();
+  const { user, hashedEmail } = useUser();
+  const router = useRouter();
 
   const [formData, setFormData] = useState({
     name: "",
@@ -24,7 +27,6 @@ export default function QuestForm({ onBack }) {
   });
 
   const [loading, setLoading] = useState(false);
-  const [generatedResult, setGeneratedResult] = useState(null);
   const [error, setError] = useState(null);
   const [missingFields, setMissingFields] = useState([]);
 
@@ -89,7 +91,6 @@ export default function QuestForm({ onBack }) {
 
     // Ensure required fields are filled
     const requiredFields = ["type", "complexity"];
-
     const emptyFields = requiredFields.filter((field) => !formData[field]);
 
     if (emptyFields.length > 0) {
@@ -112,42 +113,35 @@ export default function QuestForm({ onBack }) {
       );
 
       logger.debug("Sanitized quest data:", sanitizedData);
-      console.log("Sanitized quest data:", sanitizedData);
+      console.log("Submitting quest data:", sanitizedData);
 
       // Let getAssetImage handle nesting:
       const response = await getAssetImage(auth.user, sanitizedData, "quest");
       logger.info("API Response:", response);
+      console.log("Quest creation response:", response);
 
-      // Set the result
-      setGeneratedResult({
-        id: response?.asset?.id,
-        name: response?.asset?.name,
-        imageUrl: response?.asset?.imageUrl,
-        visibility: response?.asset?.visibility,
-        description: response?.asset?.description,
-      });
+      // Extract the UUID from the response (not the numeric ID)
+      const assetUuid = response?.asset?.uuid;
+
+      if (!assetUuid) {
+        setError("Failed to get asset UUID from the response");
+        setLoading(false);
+        return;
+      }
+
+      // Store the current page in session storage for back button functionality
+      sessionStorage.setItem("previousPage", "/create");
+
+      // Redirect directly to the asset's profile page using the UUID
+      console.log(`Redirecting to /profile/${assetUuid}`);
+      router.push(`/profile/${assetUuid}`);
     } catch (err) {
       setError("Failed to generate the quest. Please try again.");
       logger.error("Quest submission error:", err.message);
-    } finally {
+      console.error("API call error details:", err);
       setLoading(false);
     }
   };
-
-  if (generatedResult) {
-    return (
-      <GeneratedAsset
-        data={{
-          id: generatedResult.id,
-          name: generatedResult.name,
-          imageUrl: generatedResult.imageUrl,
-          visibility: generatedResult.visibility,
-          description: generatedResult.description,
-        }}
-        onBack={() => setGeneratedResult(null)}
-      />
-    );
-  }
 
   return (
     <form onSubmit={handleSubmit} className="space-y-8">

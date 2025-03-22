@@ -1,4 +1,4 @@
-// src/components/SearchFeatures.js
+// src/components/SearchFeatures.js - Complete revised version
 import {
   Dropdown,
   DropdownButton,
@@ -6,9 +6,10 @@ import {
   DropdownMenu,
 } from "@/components/tailwindui/dropdown";
 import { ChevronDownIcon, ChevronUpIcon } from "@heroicons/react/24/outline";
-import { useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
+import { useSearch } from "./SearchBar";
 
-export default function SearchFeatures() {
+export default function SearchFeatures({ onFilterChange }) {
   // State for filter selections
   const [sortOption, setSortOption] = useState("recent");
   const [timeOption, setTimeOption] = useState("all");
@@ -22,23 +23,47 @@ export default function SearchFeatures() {
   // State for advanced options visibility
   const [showAdvanced, setShowAdvanced] = useState(false);
 
-  // Toggle asset type selection
-  const toggleAssetType = (type) => {
-    setAssetTypes((prev) => ({
-      ...prev,
-      [type]: !prev[type],
-    }));
-  };
+  // Get search context
+  const { isSearchActive } = useSearch();
+
+  // Memoize the filters object to prevent recreation on every render
+  const filters = useMemo(
+    () => ({
+      sortBy: sortOption,
+      timePeriod: timeOption,
+      assetTypes,
+    }),
+    [sortOption, timeOption, assetTypes],
+  );
+
+  // Toggle asset type selection using a memoized callback
+  const toggleAssetType = useCallback((type) => {
+    setAssetTypes((prev) => {
+      const newTypes = {
+        ...prev,
+        [type]: !prev[type],
+      };
+
+      return newTypes;
+    });
+  }, []);
 
   // Handle sort option selection
-  const handleSortSelect = (option) => {
+  const handleSortSelect = useCallback((option) => {
     setSortOption(option);
-  };
+  }, []);
 
   // Handle time period selection
-  const handleTimeSelect = (option) => {
+  const handleTimeSelect = useCallback((option) => {
     setTimeOption(option);
-  };
+  }, []);
+
+  // Update parent component with filters when they change
+  useEffect(() => {
+    if (onFilterChange) {
+      onFilterChange(filters);
+    }
+  }, [filters, onFilterChange]); // Only re-run when filters or onFilterChange changes
 
   return (
     <div className="w-full flex flex-col gap-4 py-2">

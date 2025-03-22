@@ -1,13 +1,16 @@
 // src/components/CharacterForm.js
 
 import { getAssetImage } from "@/api";
+import { useUser } from "@/context/UserContext";
 import logger from "@/utils/logger";
+import { useRouter } from "next/router";
 import { useState } from "react";
 import { useAuth } from "react-oidc-context";
-import GeneratedAsset from "./GeneratedAsset";
 
 export default function CharacterForm({ onBack }) {
   const auth = useAuth();
+  const { user, hashedEmail } = useUser();
+  const router = useRouter();
 
   const [formData, setFormData] = useState({
     name: "",
@@ -23,12 +26,11 @@ export default function CharacterForm({ onBack }) {
     motivation: "",
   });
 
-  const [loading, setLoading] = useState(false); // Prevent further submissions while waiting for api return
-  const [generatedResult, setGeneratedResult] = useState(null); // Store what we get back from the api
-  const [error, setError] = useState(null); // Updated when things go wrong, used to prevent submission and tell user about errors
-  const [missingFields, setMissingFields] = useState([]); // Tracks which required fields are missing
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState(null);
+  const [missingFields, setMissingFields] = useState([]);
 
-  // Remove default HTML functionality and use state to control forms instead
+  // Handle form input changes
   const handleChange = (e) => {
     const { name, value } = e.target;
     setFormData((prev) => ({ ...prev, [name]: value }));
@@ -56,66 +58,59 @@ export default function CharacterForm({ onBack }) {
       );
       logger.info("Sanitized form data:", sanitizedData);
 
-      // Make sure required fields arne't empty
+      // Make sure required fields aren't empty
       const requiredFields = ["name", "race", "class", "gender"];
       const emptyFields = requiredFields.filter(
         (field) => !sanitizedData[field],
       );
 
       if (emptyFields.length > 0) {
-        setMissingFields(emptyFields); // Store missing fields in state
+        setMissingFields(emptyFields);
         const missingError = `Missing required fields: ${emptyFields.join(", ")}`;
         setError(missingError);
         logger.error(missingError);
         setLoading(false);
         return;
       } else {
-        setMissingFields([]); // Reset missing fields if all required fields are filled
+        setMissingFields([]);
       }
-      // DEBUG: see everything we're sending in the api call
+
       logger.debug("Complete form data to send:", formData);
 
-      // Make the API call (through the function in src/api.js)
+      // Make the API call
       const response = await getAssetImage(
         auth.user,
         sanitizedData,
         "character",
-      ); // ***Specify what type of asset are we generating e.g ["character", "quest", "quest", "map"]
-      logger.info("API Response:", response);
+      );
 
-      // updated for API version 2
-      setGeneratedResult({
-        id: response?.asset?.id,
-        name: response?.asset?.name,
-        imageUrl: response?.asset?.imageUrl,
-        visibility: response?.asset?.visibility,
-        description: response?.asset?.description,
-      });
+      console.log("Asset creation response:", response);
+
+      // Extract the UUID from the response (not the numeric ID)
+      const assetUuid = response?.asset?.uuid;
+
+      if (!assetUuid) {
+        setError("Failed to get asset UUID from the response");
+        setLoading(false);
+        return;
+      }
+
+      // Store the current page in session storage for back button functionality
+      sessionStorage.setItem("previousPage", "/create");
+
+      // Redirect directly to the asset's profile page using the UUID
+      console.log(`Redirecting to /profile/${assetUuid}`);
+      router.push(`/profile/${assetUuid}`);
     } catch (err) {
       const submissionError =
         "Failed to generate the character. Please try again.";
       setError(submissionError);
       logger.error(submissionError, err.message);
-    } finally {
+      console.error("API call error details:", err);
       setLoading(false);
-      logger.info("Form submission process complete.");
     }
   };
 
-  // Generated Asset Display
-
-  // Didn't want to display the generated asset as its own page, using nested component instead
-  // This code will show the asset in place of the character form when a successful API return is stored
-  if (generatedResult && generatedResult.id && generatedResult.imageUrl) {
-    return (
-      <GeneratedAsset
-        data={generatedResult}
-        onBack={() => setGeneratedResult(null)} // Pressing back will break the condition (setting state to null) and show the form again
-      />
-    );
-  }
-
-  // Character Form
   return (
     <form onSubmit={handleSubmit} className="space-y-8">
       <div className="space-y-6">
@@ -342,7 +337,7 @@ export default function CharacterForm({ onBack }) {
         <button
           type="submit"
           className="px-4 py-2 text-sm font-medium text-white bg-indigo-600 rounded-md hover:bg-indigo-500"
-          disabled={loading} // Prevent another send attempt while loading
+          disabled={loading}
         >
           {loading ? "Submitting..." : "Submit"}
         </button>
