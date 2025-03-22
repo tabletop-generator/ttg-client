@@ -1,4 +1,4 @@
-/* eslint-disable @next/next/no-img-element */
+// Updated CollectionDetails.js - Key sections modified for ownership check
 import {
   addAssetsToCollection,
   deleteCollectionById,
@@ -20,6 +20,7 @@ export default function CollectionDetails({
   userCollections,
   onBack,
   allAssets,
+  isOwnProfile = true, // Add isOwnProfile prop with default true for backward compatibility
 }) {
   const auth = useAuth();
   const router = useRouter();
@@ -39,14 +40,23 @@ export default function CollectionDetails({
   const [shareMessageType, setShareMessageType] = useState("");
   const dropdownRef = useRef(null);
 
+  // Check if the current user owns this collection
+  // Either through the isOwnProfile prop or by comparing owner IDs
+  const isCollectionOwner =
+    isOwnProfile ||
+    user?.hashedEmail === ownerId ||
+    user?.hashedEmail === collection?.ownerId;
+
   // Combine both user objects, ensuring the token is under 'id_token'
-  const combinedUser = {
-    ...user,
-    id_token: cognitoUser.id_token,
-  };
+  const combinedUser =
+    user && cognitoUser
+      ? {
+          ...user,
+          id_token: cognitoUser.id_token,
+        }
+      : null;
 
   // Fetch full collection details and load expanded asset details
-
   useEffect(() => {
     const fetchCollectionDetails = async () => {
       if (!cognitoUser?.id_token || !collection?.id) return;
@@ -56,10 +66,10 @@ export default function CollectionDetails({
         if (response && response.collection) {
           const collectionData = response.collection;
           setCurrentCollection(collectionData);
-          // console.log("1) collectionData: ", collectionData);
-          //  console.log("Owner ID:", collectionData.ownerId);
+
           const fetchedOwnerId = collectionData.ownerId;
           setOwnerId(fetchedOwnerId);
+
           if (collectionData.assets && collectionData.assets.length > 0) {
             const fullAssets = await Promise.all(
               collectionData.assets.map(async (assetEntry, index) => {
@@ -68,17 +78,11 @@ export default function CollectionDetails({
                   typeof assetEntry === "string" ? assetEntry : assetEntry.uuid;
                 console.log(`Fetching asset ${index + 1} with uuid: ${uuid}`);
                 const assetResponse = await getAssetByID(cognitoUser, uuid);
-                console.log(
-                  `Asset response for asset ${index + 1}:`,
-                  assetResponse,
-                );
                 return assetResponse?.data?.asset || null;
               }),
             );
             const validAssets = fullAssets.filter((asset) => asset !== null);
-            console.log("validAssets:", validAssets);
             setUpdatedAssets(validAssets);
-            console.log("Updated Assets:", validAssets);
           }
         }
       } catch (error) {
@@ -91,20 +95,18 @@ export default function CollectionDetails({
     fetchCollectionDetails();
   }, [cognitoUser, collection.id]);
 
-  // Determine if this collection belongs to the current user.
-  const isCollection = combinedUser.hashedEmail === ownerId;
-  if (!isCollection) {
-    console.log("User is seeing a public collection");
-  } else {
-    console.log("User is seeing a their own collection");
-  }
-
-  // Handle adding an asset to the collection
+  // Handle adding an asset to the collection - only available to collection owner
   const handleAddAsset = async (asset) => {
+    if (!isCollectionOwner) {
+      console.warn("Cannot add assets to someone else's collection");
+      return;
+    }
+
     if (!cognitoUser?.id_token) {
       console.error("User authentication token is missing");
       return;
     }
+
     try {
       await addAssetsToCollection(cognitoUser, currentCollection.id, [
         asset.id || asset.uuid,
@@ -116,12 +118,18 @@ export default function CollectionDetails({
     }
   };
 
-  // Handle removing an asset from the collection
+  // Handle removing an asset from the collection - only available to collection owner
   const handleRemoveAsset = async (asset) => {
+    if (!isCollectionOwner) {
+      console.warn("Cannot remove assets from someone else's collection");
+      return;
+    }
+
     if (!cognitoUser?.id_token) {
       console.error("User authentication token is missing");
       return;
     }
+
     try {
       await removeAssetsFromCollection(cognitoUser, currentCollection.id, [
         asset.uuid,
@@ -145,7 +153,7 @@ export default function CollectionDetails({
   const handleShare = () => {
     if (currentCollection.visibility === "private") {
       setShareMessage(
-        "Your collection is private, can't share private secrets. Make it public and try again.",
+        "This collection is private and can't be shared. Public collections can be shared.",
       );
       setShareMessageType("error");
       setTimeout(() => {
@@ -181,17 +189,29 @@ export default function CollectionDetails({
       });
   };
 
-  // Handle delete button click to show modal
+  // Handle delete button click to show modal - only available to collection owner
   const handleDeleteClick = () => {
+    if (!isCollectionOwner) {
+      console.warn("Cannot delete someone else's collection");
+      return;
+    }
+
     setShowDeleteModal(true);
   };
 
-  // Handle delete confirmation
+  // Handle delete confirmation - only available to collection owner
   const handleDeleteConfirm = async () => {
+    if (!isCollectionOwner) {
+      console.warn("Cannot delete someone else's collection");
+      setShowDeleteModal(false);
+      return;
+    }
+
     if (!cognitoUser?.id_token) {
       console.error("User authentication token is missing");
       return;
     }
+
     try {
       await deleteCollectionById(cognitoUser, currentCollection.id);
       console.log("Collection deleted successfully!");
@@ -254,7 +274,8 @@ export default function CollectionDetails({
                 : ""}
             </div>
             <div className={styles.rightButtons}>
-              {isCollection && (
+              {/* Add Asset button - Only show for collection owner */}
+              {isCollectionOwner && (
                 <button
                   onClick={() => setShowAssetGrid(true)}
                   className={styles.buttonRound}
@@ -263,13 +284,15 @@ export default function CollectionDetails({
                 </button>
               )}
 
+              {/* Share button - Available to everyone */}
               <button
                 onClick={handleShare}
                 className={copied ? styles.buttonCopied : styles.buttonRound}
               >
                 <Share2 size={20} />
               </button>
-              {/* Render the share message if available */}
+
+              {/* Share message/confirmation */}
               {shareMessage && (
                 <div
                   className={
@@ -282,7 +305,8 @@ export default function CollectionDetails({
                 </div>
               )}
 
-              {isCollection && (
+              {/* More options menu - Only show for collection owner */}
+              {isCollectionOwner && (
                 <div className="relative" ref={dropdownRef}>
                   <button
                     onClick={() => setMenuOpen(!menuOpen)}
@@ -311,7 +335,8 @@ export default function CollectionDetails({
             </div>
           </div>
 
-          {showAssetGrid && (
+          {/* Asset Selection Grid - Only shown for collection owner */}
+          {isCollectionOwner && showAssetGrid && (
             <div className={styles.assetSelectionGrid}>
               <h3 className="text-lg font-bold">Select an Asset to Add</h3>
               {allAssets && allAssets.length > 0 ? (
@@ -331,6 +356,7 @@ export default function CollectionDetails({
                         className={styles.assetCard}
                         onClick={() => handleAddAsset(asset)}
                       >
+                        {/* eslint-disable-next-line @next/next/no-img-element */}
                         <img src={asset.imageUrl} alt={asset.name} />
                         <h5>{asset.name}</h5>
                         <p>{asset.type}</p>
@@ -354,9 +380,11 @@ export default function CollectionDetails({
             </div>
           )}
 
+          {/* Asset Grid - Viewable by everyone */}
           <div className={styles.assetGrid}>
             {updatedAssets.map((asset) => (
               <div key={asset.id || asset.uuid} className={styles.assetCard}>
+                {/* eslint-disable-next-line @next/next/no-img-element */}
                 <img
                   src={asset.imageUrl}
                   alt={asset.name}
@@ -365,7 +393,8 @@ export default function CollectionDetails({
                 />
                 <h5>{asset.name}</h5>
                 <p>{asset.type}</p>
-                {isCollection && (
+                {/* Remove button - only show for collection owner */}
+                {isCollectionOwner && (
                   <button
                     onClick={() => handleRemoveAsset(asset)}
                     className="text-red-400 hover:text-red-600"
@@ -379,7 +408,7 @@ export default function CollectionDetails({
         </>
       )}
 
-      {/* Delete confirmation modal for collection */}
+      {/* Delete confirmation modal */}
       {showDeleteModal && (
         <DeleteModal
           collectionName={currentCollection.name}
@@ -399,7 +428,7 @@ function DeleteModal({ assetName, onConfirm, onCancel }) {
           Are you sure you want to delete <br /> this collection
           <span className="text-red-600">{assetName}</span>?
         </h2>
-        <p className="mb-4">This action can’t be undone!</p>
+        <p className="mb-4">This action can&apos;t be undone!</p>
         <div className="flex justify-center gap-4">
           <button
             onClick={onConfirm}

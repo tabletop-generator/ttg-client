@@ -1,20 +1,22 @@
+// Updated AssetGrid.js with ownership check
 import { useRouter } from "next/router";
 
-export default function AssetGrid({ assets }) {
+export default function AssetGrid({ assets, isOwnProfile = true }) {
   const router = useRouter();
 
   const handleAssetClick = (uuid) => {
     console.log("Clicked Asset UUID:", uuid);
     sessionStorage.setItem("previousPage", window.location.href); // Store current page
-    router.push(`/profile/${uuid}`); //Navigate to Asset Details
+    router.push(`/profile/${uuid}`); // Navigate to Asset Details
   };
 
   return (
     <div>
       {assets.length === 0 ? (
         <div className="text-gray-500 text-center">
-          No assets yet! Time to get creative and add some treasures to your
-          library!
+          {isOwnProfile
+            ? "No assets yet! Time to get creative and add some treasures to your library!"
+            : "This user hasn't created any public assets yet."}
         </div>
       ) : (
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">

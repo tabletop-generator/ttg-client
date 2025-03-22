@@ -1,10 +1,5 @@
 /* eslint-disable react-hooks/exhaustive-deps */
-import {
-  getCollection,
-  getCollectionById,
-  getUser,
-  getUserAssets,
-} from "@/api";
+import { getCollection, getUser, getUserAssets } from "@/api";
 import AssetGrid from "@/components/Profile/AssetGrid";
 import CollectionDetails from "@/components/Profile/CollectionDetails";
 import CollectionGrid from "@/components/Profile/CollectionGrid";
@@ -131,6 +126,7 @@ function Profile() {
     setSelectedCollection(null);
     router.push(`/profile?tab=${tab}`, undefined, { shallow: true });
   };
+
   useEffect(() => {
     if (tab === "collections" && collectionId && auth.user?.id_token) {
       setLoadingShared(true);
@@ -164,10 +160,11 @@ function Profile() {
         onBack={() => router.push("/profile?tab=collections")}
         userCollections={[]}
         allAssets={[]}
-        test="test"
+        isOwnProfile={true} // This is your own profile, so you are the owner
       />
     );
   }
+
   return (
     <div className="min-h-screen bg-gray-900 text-white">
       <div className="container mx-auto p-6">
@@ -178,6 +175,7 @@ function Profile() {
             profilePhoto={user?.profilePictureUrl}
             bio={user?.profileBio}
             onEdit={() => setIsEditing(true)}
+            isOwnProfile={true} // This is your own profile, so you are the owner
           />
         ) : (
           <EditableProfileHeader
@@ -202,6 +200,7 @@ function Profile() {
             user={user}
             collections={userCollections}
             hashedEmail={hashedEmail}
+            isOwnProfile={true} // This is your own profile, so you are the owner
           />
         )}
 
@@ -211,6 +210,7 @@ function Profile() {
             setUser={setUser}
             collections={userCollections}
             onCollectionClick={setSelectedCollection}
+            isOwnProfile={true} // This is your own profile, so you are the owner
           />
         )}
 
@@ -222,6 +222,7 @@ function Profile() {
             userCollections={userCollections}
             onBack={() => setSelectedCollection(null)}
             allAssets={userAssets}
+            isOwnProfile={true} // This is your own profile, so you are the owner
           />
         )}
       </div>
