@@ -393,7 +393,7 @@ export default function CollectionDetails({
                 />
                 <h5>{asset.name}</h5>
                 <p>{asset.type}</p>
-                {/* Remove button - Only show for collection owner */}
+                {/* Remove button - only show for collection owner */}
                 {isCollectionOwner && (
                   <button
                     onClick={() => handleRemoveAsset(asset)}
