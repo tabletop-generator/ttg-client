@@ -9,8 +9,9 @@ import {
 } from "@/api";
 import CommentsSection from "@/components/Profile/CommentsSection";
 import CreateCollectionForm from "@/components/Profile/CreateCollectionForm";
-import styles from "@/styles/AssetDetailsCard.module.css"; // The CSS module
+import styles from "@/styles/AssetDetailsCard.module.css";
 import { Heart, MoreHorizontal, Share2, Star } from "lucide-react";
+import Link from "next/link";
 import { useRouter } from "next/router";
 import { useEffect, useRef, useState } from "react";
 import { useAuth } from "react-oidc-context";
@@ -334,6 +335,13 @@ export default function AssetDetailsCard({
     setShowDeleteModal(false);
   };
 
+  // Handle click on creator name to view their profile
+  const handleViewCreatorProfile = () => {
+    if (asset.user?.hashedEmail) {
+      router.push(`/profile/user/${asset.user.hashedEmail}`);
+    }
+  };
+
   // Close the 3-dot menu when clicking outside
   useEffect(() => {
     const handleClickOutside = (event) => {
@@ -401,7 +409,18 @@ export default function AssetDetailsCard({
 
         {/* Created By, Asset Type and Created Date */}
         <p className="text-gray-400 mb-2 capitalize">
-          <strong>Created By:</strong> {asset.creatorName}
+          <strong>Created By:</strong>{" "}
+          {/* Make creator name a clickable link to their profile */}
+          {asset.user?.hashedEmail ? (
+            <Link
+              href={`/profile/user/${asset.user.hashedEmail}`}
+              className="text-indigo-400 hover:text-indigo-300"
+            >
+              {asset.creatorName}
+            </Link>
+          ) : (
+            asset.creatorName
+          )}
         </p>
         <p className="text-gray-400 mb-2 capitalize">
           <strong>Type:</strong> {asset.type || "Unknown Type"}

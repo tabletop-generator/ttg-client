@@ -1,14 +1,16 @@
+// Modified CollectionGrid.js with ownership check
 import { getUser, postCollection } from "@/api";
-
 import CreateCollectionForm from "@/components/Profile/CreateCollectionForm";
 import { useRouter } from "next/router";
 import { useState } from "react";
 import { useAuth } from "react-oidc-context";
+
 export default function CollectionGrid({
   user,
   setUser,
   collections,
   onCollectionClick,
+  isOwnProfile = true, // Added ownership flag with default true for backward compatibility
 }) {
   const auth = useAuth();
   const router = useRouter();
@@ -59,8 +61,8 @@ export default function CollectionGrid({
 
   return (
     <div>
-      {/* Create Collection Button */}
-      {!isCreating && (
+      {/* Create Collection Button - Only shown for profile owner */}
+      {isOwnProfile && !isCreating && (
         <div className="mb-4">
           <button
             onClick={() => setIsCreating(true)}
@@ -72,7 +74,7 @@ export default function CollectionGrid({
       )}
 
       {/* Show Create Collection Form or Collections Grid */}
-      {isCreating ? (
+      {isOwnProfile && isCreating ? (
         <CreateCollectionForm
           onCancel={() => setIsCreating(false)}
           onCreate={handleCreateCollection}
@@ -81,7 +83,9 @@ export default function CollectionGrid({
         <div className="flex flex-col gap-4">
           {collections.length === 0 ? (
             <div className="text-center text-gray-500">
-              No collections available. Create one to get started!
+              {isOwnProfile
+                ? "No collections available. Create one to get started!"
+                : "This user hasn't created any public collections yet."}
             </div>
           ) : (
             collections.map((collection) => (
