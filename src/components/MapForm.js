@@ -1,11 +1,16 @@
 import { getAssetImage } from "@/api";
-import GeneratedAsset from "@/components/GeneratedAsset";
+import { useUser } from "@/context/UserContext";
 import logger from "@/utils/logger";
+import { useRouter } from "next/router";
 import { useState } from "react";
 import { useAuth } from "react-oidc-context";
 
 export default function MapForm({ onBack }) {
-  // Initialize form state with all fields, including a unique ID
+  const auth = useAuth();
+  const { user, hashedEmail } = useUser();
+  const router = useRouter();
+
+  // Initialize form state with all fields
   const [formData, setFormData] = useState({
     name: "",
     type: "",
@@ -16,75 +21,15 @@ export default function MapForm({ onBack }) {
     pointsOfInterest: "",
   });
 
-  const [isSubmitted, setIsSubmitted] = useState(false);
-  const [generatedResult, setGeneratedResult] = useState(null); // Placeholder for API response
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
-  const [missingFields, setMissingFields] = useState([]); // Tracks which required fields are missing
+  const [missingFields, setMissingFields] = useState([]);
 
-  // Custom styles for Terrain Multi-Select
-  const customStyles = {
-    control: (provided, state) => ({
-      ...provided,
-      backgroundColor: "#1F2937",
-      border: "1px solid #4B5563",
-      color: "white",
-      height: "48px",
-      borderRadius: "0.375rem",
-      padding: "0 0.75rem",
-      marginTop: "4px",
-      boxShadow: state.isFocused ? "0 0 0 2px #6366F1" : "none",
-      "&:hover": {
-        borderColor: "#6366F1",
-      },
-    }),
-    placeholder: (provided) => ({
-      ...provided,
-      color: "#9CA3AF",
-    }),
-    singleValue: (provided) => ({
-      ...provided,
-      color: "white",
-    }),
-    menu: (provided) => ({
-      ...provided,
-      backgroundColor: "#1F2937",
-      borderRadius: "0.375rem",
-      color: "white",
-    }),
-    option: (provided, state) => ({
-      ...provided,
-      backgroundColor: state.isFocused ? "#374151" : "transparent",
-      color: "white",
-      "&:hover": {
-        backgroundColor: "#4B5563",
-      },
-    }),
-    multiValue: (provided) => ({
-      ...provided,
-      backgroundColor: "#374151",
-      color: "white",
-    }),
-    multiValueLabel: (provided) => ({
-      ...provided,
-      color: "white",
-    }),
-    multiValueRemove: (provided) => ({
-      ...provided,
-      color: "#E5E7EB",
-      "&:hover": {
-        backgroundColor: "#4B5563",
-        color: "white",
-      },
-    }),
-  };
-
+  // Handle input changes
   const handleChange = (e) => {
     const { name, value } = e.target;
     setFormData((prev) => ({ ...prev, [name]: value }));
   };
-
-  const auth = useAuth();
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -118,54 +63,34 @@ export default function MapForm({ onBack }) {
       );
       logger.info("Sanitized form data:", sanitizedData);
 
-      //Format request body
-      // const requestBody = {
-      //   // name: sanitizedData.name || "Untitled Map",
-      //   // type: "map",
-      //   // visibility: "public",
-      //   type: sanitizedData.type,
-      //   style: sanitizedData.style,
-      //   scale: sanitizedData.scale,
-      //   terrain: sanitizedData.terrain,
-      //   orientation: sanitizedData.orientation || "",
-      //   pointsOfInterest: sanitizedData.pointsOfInterest || "",
-      // };
-
-      // logger.debug("Final request payload:", requestBody);
-      // console.log("Final request payload:", requestBody);
-
       // API call
       const response = await getAssetImage(auth.user, sanitizedData, "map");
       logger.info("API Response:", response);
 
-      // Store response for rendering in GeneratedAsset
-      setGeneratedResult({
-        id: response?.asset?.id,
-        name: response?.asset?.name,
-        imageUrl: response?.asset?.imageUrl,
-        visibility: response?.asset?.visibility,
-        description: response?.asset?.description,
-      });
+      console.log("Map creation response:", response);
 
-      setIsSubmitted(true);
+      // Extract the UUID from the response
+      const assetUuid = response?.asset?.uuid;
+
+      if (!assetUuid) {
+        setError("Failed to get asset UUID from the response");
+        setLoading(false);
+        return;
+      }
+
+      // Store the current page in session storage for back button functionality
+      sessionStorage.setItem("previousPage", "/create");
+
+      // Redirect directly to the asset's profile page using the UUID
+      console.log(`Redirecting to /profile/${assetUuid}`);
+      router.push(`/profile/${assetUuid}`);
     } catch (err) {
       const submissionError = "Failed to generate the map. Please try again.";
       setError(submissionError);
       logger.error(submissionError, err.message);
-    } finally {
       setLoading(false);
-      logger.info("Form submission process complete.");
     }
   };
-
-  if (generatedResult && generatedResult.id && generatedResult.imageUrl) {
-    return (
-      <GeneratedAsset
-        data={generatedResult}
-        onBack={() => setGeneratedResult(null)}
-      />
-    );
-  }
 
   return (
     <form onSubmit={handleSubmit} className="space-y-8">
@@ -243,40 +168,6 @@ export default function MapForm({ onBack }) {
               ))}
             </select>
           </div>
-
-          {/* Style */}
-          {/* <div>
-            <label
-              htmlFor="style"
-              className="block text-sm font-medium text-white"
-            >
-              Style
-            </label>
-            <select
-              id="style"
-              name="style"
-              value={formData.style}
-              onChange={handleChange}
-              className={`block w-full mt-1 h-12 rounded-md bg-gray-800 text-white focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm px-3 ${
-                missingFields.includes("style")
-                  ? "border-2 border-red-500"
-                  : "border-gray-600"
-              }`}
-            >
-              <option value="">Select a style</option>
-              {[
-                "hand-drawn",
-                "minimalist grid",
-                "fantasy ink",
-                "soft and colorful",
-                "dark and gritty",
-              ].map((style) => (
-                <option key={style} value={style}>
-                  {style}
-                </option>
-              ))}
-            </select>
-          </div> */}
 
           {/* Scale */}
           <div>

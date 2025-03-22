@@ -14,21 +14,22 @@ import { Heart, MoreHorizontal, Share2, Star } from "lucide-react";
 import { useRouter } from "next/router";
 import { useEffect, useRef, useState } from "react";
 import { useAuth } from "react-oidc-context";
+
 export default function AssetDetailsCard({
   user,
-  isMyAsset,
   hashedEmail,
   asset,
-  userCollections,
+  userCollections = [],
   setUserCollections,
   onBack,
+  isMyAsset,
+  isAuthenticated = true, // Default to true for backward compatibility
 }) {
   const auth = useAuth();
-  const cognitoUser = auth.user;
   const router = useRouter();
+  const cognitoUser = auth.user;
   const userColl = user?.collections ? [...user.collections] : [];
 
-  console.log("Is this my asset:", isMyAsset);
   // Core asset states
   const [visibility, setVisibility] = useState(asset?.visibility || "private");
   const [name, setName] = useState(asset?.name || "Unnamed");
@@ -48,6 +49,9 @@ export default function AssetDetailsCard({
   const [shareMessageType, setShareMessageType] = useState("");
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [isInCollection, setIsInCollection] = useState(false);
+  const [isSaving, setIsSaving] = useState(false);
+  const [loginPromptVisible, setLoginPromptVisible] =
+    useState(!isAuthenticated);
 
   const defaultImage = "/placeholder/p01.png"; // fallback image
 
@@ -55,33 +59,53 @@ export default function AssetDetailsCard({
   const starButtonRef = useRef(null);
   const dropdownRef = useRef(null);
 
-  //checking to see if asset is in a collection for the star to be highlighted
-  /*
-  TO PROPERLY TEST/CONNECT WHEN BACKEND API IS WORKING
-  */
+  // For unauthenticated users, show a login prompt for certain actions
+  const handleUnauthenticatedAction = (actionType) => {
+    const confirmLogin = window.confirm(
+      `You need to be logged in to ${actionType} this asset. Would you like to log in now?`,
+    );
+
+    if (confirmLogin) {
+      auth.signinRedirect(); // Redirect to login
+    }
+  };
+
+  // Check if asset is in a collection
   const isAssetInCollection = async (assetUuid) => {
-    const collection = await getCollection(cognitoUser);
-    if (!collection || !collection.assets) return false;
-    return collection.assets.some((mockAsset) => mockAsset.id === assetUuid);
+    if (!assetUuid || !isAuthenticated) return false;
+
+    try {
+      const collection = await getCollection(cognitoUser);
+      if (!collection || !collection.assets) return false;
+      return collection.assets.some((mockAsset) => mockAsset.id === assetUuid);
+    } catch (error) {
+      console.error("Error checking if asset is in collection:", error);
+      return false;
+    }
   };
 
   useEffect(() => {
     (async () => {
-      if (await isAssetInCollection(asset.uuid)) {
-        console.log("This asset is in the collection.");
-        setIsInCollection(true);
+      if (asset?.uuid && isAuthenticated) {
+        try {
+          const inCollection = await isAssetInCollection(asset.uuid);
+          console.log("Asset in collection:", inCollection);
+          setIsInCollection(inCollection);
+        } catch (error) {
+          console.error("Error checking collection status:", error);
+          setIsInCollection(false);
+        }
       } else {
-        console.log("Asset not found in the collection.");
         setIsInCollection(false);
       }
     })();
-  }, [asset]);
+  }, [asset, isAuthenticated]);
 
   // ---- HANDLERS ----
   const handleShare = () => {
     if (visibility === "private") {
       setShareMessage(
-        "Your asset is private, can't share private secrets. Make it public and try again.",
+        "This asset is private and can't be shared. Public assets can be shared.",
       );
       setShareMessageType("error");
       setTimeout(() => {
@@ -91,8 +115,11 @@ export default function AssetDetailsCard({
       return;
     }
 
+    // Create full URL with asset ID
+    const assetUrl = `${window.location.origin}/profile/${asset.uuid || asset.id}`;
+
     navigator.clipboard
-      .writeText(window.location.href)
+      .writeText(assetUrl)
       .then(() => {
         setShareMessage("Copied to Clipboard!");
         setShareMessageType("success");
@@ -112,22 +139,12 @@ export default function AssetDetailsCard({
       });
   };
 
-  const handleBack = () => {
-    if (!isMyAsset) {
-      const previousPage = sessionStorage.getItem("previousPage");
-
-      if (previousPage) {
-        router.push(previousPage); // Go to stored page
-        sessionStorage.removeItem("previousPage"); // Clear it after use
-      } else {
-        router.push("/profile?tab=assets"); // Default fallback
-      }
-    } else {
-      router.push("/profile?tab=assets"); // Always return to user's assets
-    }
-  };
-
   const handleStar = () => {
+    if (!isAuthenticated) {
+      handleUnauthenticatedAction("add to collection");
+      return;
+    }
+
     setIsStarred(!isStarred);
     setShowCollectionDropdown(true);
   };
@@ -151,8 +168,12 @@ export default function AssetDetailsCard({
   }, []);
 
   // Handler when a collection is selected from the dropdown.
-  // Uses the passed collection's ID to add the asset.
   const handleAddToCollection = async (collection) => {
+    if (!isAuthenticated) {
+      handleUnauthenticatedAction("add to collection");
+      return;
+    }
+
     try {
       await addAssetsToCollection(cognitoUser, collection.id, [asset.uuid]);
       console.log(`Added ${asset.name} to collection: ${collection.name}`);
@@ -163,10 +184,13 @@ export default function AssetDetailsCard({
     setShowCollectionDropdown(false);
   };
 
-  // ---- CREATE COLLECTION HANDLER ----
-  // calling API to create a new collection,
-  // and then attempts to add the current asset to the newly created collection.
+  // Create collection handler
   const handleCreateCollection = async (newCollection) => {
+    if (!isAuthenticated) {
+      handleUnauthenticatedAction("create collection");
+      return;
+    }
+
     if (!setUserCollections) {
       console.error("setUserCollections is undefined!");
       return;
@@ -203,6 +227,7 @@ export default function AssetDetailsCard({
           console.log(
             `Added ${asset.name} to the newly created collection: ${createdCollection.name}`,
           );
+          setIsInCollection(true);
         } catch (error) {
           console.error("Failed to add asset to new collection:", error);
         }
@@ -219,6 +244,11 @@ export default function AssetDetailsCard({
   };
 
   const handleLike = () => {
+    if (!isAuthenticated) {
+      handleUnauthenticatedAction("like");
+      return;
+    }
+
     setIsLiked(!isLiked);
     setLikes((prev) => (!isLiked ? prev + 1 : Math.max(prev - 1, 0)));
   };
@@ -229,15 +259,40 @@ export default function AssetDetailsCard({
   };
 
   const handleSave = async () => {
+    if (!isAuthenticated || !isMyAsset) {
+      console.error("User not authorized to edit this asset");
+      return;
+    }
+
     const newInfo = { name, description, visibility };
     console.log("Saving asset with info:", newInfo);
 
+    setIsSaving(true);
+
     try {
-      await updatePrismaAssetInfo(cognitoUser, asset.uuid, newInfo);
+      // Ensure we have the right ID format
+      const assetId = asset?.uuid || asset?.id;
+      console.log("Saving changes for asset ID:", assetId);
+
+      if (!assetId) {
+        console.error("Missing asset ID - cannot save changes");
+        alert("Unable to save changes: Missing asset identifier");
+        setIsSaving(false);
+        return;
+      }
+
+      // Perform the update
+      await updatePrismaAssetInfo(cognitoUser, assetId, newInfo);
+      console.log("Asset updated successfully");
+
+      // Update local state
       asset.visibility = visibility;
       setIsEditing(false);
     } catch (error) {
       console.error("Error updating asset:", error);
+      alert("Failed to save changes. Please try again.");
+    } finally {
+      setIsSaving(false);
     }
   };
 
@@ -249,17 +304,26 @@ export default function AssetDetailsCard({
   };
 
   const handleDeleteClick = () => {
+    if (!isAuthenticated || !isMyAsset) {
+      console.error("User not authorized to delete this asset");
+      return;
+    }
+
     setShowDeleteModal(true);
   };
 
   const handleDeleteConfirm = async () => {
+    if (!isAuthenticated || !isMyAsset) {
+      console.error("User not authorized to delete this asset");
+      setShowDeleteModal(false);
+      return;
+    }
+
     try {
       await deletePrismaAsset(cognitoUser, asset.uuid);
-      onBack();
-      setTimeout(() => {
-        window.location.reload();
-      }, 100);
-      console.log("Asset deleted successfully!");
+
+      // After successful deletion, navigate back to profile
+      router.push("/profile?tab=assets");
     } catch (error) {
       console.error("Failed to delete asset:", error);
     }
@@ -292,6 +356,30 @@ export default function AssetDetailsCard({
           className="w-full rounded-lg mb-6"
         />
 
+        {/* Login prompt for unauthenticated users */}
+        {loginPromptVisible && !isAuthenticated && (
+          <div className="bg-indigo-600 text-white p-4 rounded-lg mb-4">
+            <p className="font-bold">Want full interaction with this asset?</p>
+            <p className="text-sm mb-2">
+              Log in to like, save to collections, and more!
+            </p>
+            <div className="flex justify-between items-center">
+              <button
+                onClick={() => auth.signinRedirect()}
+                className="px-4 py-2 bg-white text-indigo-600 rounded-md hover:bg-gray-100"
+              >
+                Log In
+              </button>
+              <button
+                onClick={() => setLoginPromptVisible(false)}
+                className="text-white underline"
+              >
+                Continue as guest
+              </button>
+            </div>
+          </div>
+        )}
+
         {/* Asset Name & Like Count */}
         <div className="flex items-center justify-between mb-4">
           {isEditing ? (
@@ -310,6 +398,7 @@ export default function AssetDetailsCard({
             <span className="text-white">{likes}</span>
           </div>
         </div>
+
         {/* Created By, Asset Type and Created Date */}
         <p className="text-gray-400 mb-2 capitalize">
           <strong>Created By:</strong> {asset.creatorName}
@@ -323,27 +412,29 @@ export default function AssetDetailsCard({
             ? new Date(asset.createdAt).toISOString().split("T")[0]
             : "N/A"}
         </p>
+
         {!isEditing && (
           <p className="text-gray-400 mb-4">
             <strong>Visibility:</strong>{" "}
             <span className="text-white capitalize">{visibility}</span>
           </p>
         )}
+
         {/* Buttons: Like, Star (for collection), Share, Edit */}
-        <div className="flex items-center justify-center gap-4 mb-6">
-          {!isEditing && (
+        {!isEditing && (
+          <div className="flex items-center justify-center gap-4 mb-6">
+            {/* Like Button */}
             <button
               onClick={handleLike}
               className={`${styles.roundedButton} w-10 h-10 hover:opacity-80 ${
                 isLiked ? "bg-red-500 text-white" : "bg-gray-700 text-gray-300"
               }`}
+              title="Like this asset"
             >
               <Heart className="w-5 h-5" fill="currentColor" />
             </button>
-          )}
 
-          {/* Star Button & Collection Dropdown */}
-          {!isEditing && (
+            {/* Star/Collection Button */}
             <div className="relative" ref={collectionsDropdownRef}>
               <button
                 ref={starButtonRef}
@@ -353,12 +444,13 @@ export default function AssetDetailsCard({
                     ? "bg-yellow-500 text-black"
                     : styles.bgGrayButton
                 }`}
+                title="Add to collection"
               >
                 <Star className="w-5 h-5 fill-current" />
               </button>
 
-              {/* Collection Dropdown */}
-              {!isEditing && showCollectionDropdown && (
+              {/* Collection Dropdown - Only shown for authenticated users */}
+              {isAuthenticated && showCollectionDropdown && (
                 <div className="absolute top-12 left-1/2 -translate-x-1/2 bg-gray-900 text-white rounded-md shadow-lg w-48 p-2 z-20">
                   {userColl.length > 0 ? (
                     userColl.map((collection) => (
@@ -385,7 +477,7 @@ export default function AssetDetailsCard({
               )}
 
               {/* Create Collection Modal */}
-              {!isEditing && isCreatingCollection && (
+              {isCreatingCollection && (
                 <div className="fixed inset-0 flex justify-center items-center bg-black bg-opacity-50 backdrop-blur-md z-50">
                   <div className="w-96 bg-gray-900 p-6 rounded-lg shadow-lg">
                     <CreateCollectionForm
@@ -396,10 +488,8 @@ export default function AssetDetailsCard({
                 </div>
               )}
             </div>
-          )}
 
-          {/* Share Button */}
-          {!isEditing && (
+            {/* Share Button */}
             <div className="relative">
               <button
                 onClick={handleShare}
@@ -408,6 +498,7 @@ export default function AssetDetailsCard({
                     ? styles.bgGreenButton
                     : styles.bgGrayButton
                 }`}
+                title="Share asset"
               >
                 <Share2 className="w-5 h-5 text-white fill-current" />
               </button>
@@ -422,49 +513,50 @@ export default function AssetDetailsCard({
                   {shareMessage}
                   <div
                     className="absolute bottom-0 left-1/2 transform translate-y-full -translate-x-1/2 w-0 h-0
-            border-l-[6px] border-l-transparent
-            border-r-[6px] border-r-transparent
-            border-t-[6px] border-t-white"
+                    border-l-[6px] border-l-transparent
+                    border-r-[6px] border-r-transparent
+                    border-t-[6px] border-t-white"
                   ></div>
                 </div>
               )}
             </div>
-          )}
 
-          {/* 3-dot Edit Menu */}
-          {!isEditing && isMyAsset && (
-            <div className="relative" ref={dropdownRef}>
-              <button
-                onClick={() => setMenuOpen(!menuOpen)}
-                className={`w-10 h-10 ${styles.roundedButton} ${styles.bgGrayButton}`}
-              >
-                <MoreHorizontal className="w-5 h-5 text-white" />
-              </button>
-              {menuOpen && (
-                <div className={styles.dropdownMenu}>
-                  <button
-                    onClick={() => {
-                      setIsEditing(true);
-                      setMenuOpen(false);
-                    }}
-                    className="w-full text-left px-4 py-2 hover:bg-green-700 text-white"
-                  >
-                    Edit
-                  </button>
-                  <button
-                    onClick={() => {
-                      setMenuOpen(false);
-                      setShowDeleteModal(true);
-                    }}
-                    className="w-full text-left text-red-500 px-4 py-2 hover:bg-red-700 hover:text-white"
-                  >
-                    Delete
-                  </button>
-                </div>
-              )}
-            </div>
-          )}
-        </div>
+            {/* 3-dot Edit Menu - Only show if user owns the asset */}
+            {isMyAsset && (
+              <div className="relative" ref={dropdownRef}>
+                <button
+                  onClick={() => setMenuOpen(!menuOpen)}
+                  className={`w-10 h-10 ${styles.roundedButton} ${styles.bgGrayButton}`}
+                  title="More options"
+                >
+                  <MoreHorizontal className="w-5 h-5 text-white" />
+                </button>
+                {menuOpen && (
+                  <div className={styles.dropdownMenu}>
+                    <button
+                      onClick={() => {
+                        setIsEditing(true);
+                        setMenuOpen(false);
+                      }}
+                      className="w-full text-left px-4 py-2 hover:bg-green-700 text-white"
+                    >
+                      Edit
+                    </button>
+                    <button
+                      onClick={() => {
+                        setMenuOpen(false);
+                        setShowDeleteModal(true);
+                      }}
+                      className="w-full text-left text-red-500 px-4 py-2 hover:bg-red-700 hover:text-white"
+                    >
+                      Delete
+                    </button>
+                  </div>
+                )}
+              </div>
+            )}
+          </div>
+        )}
 
         {/* Asset Description / Backstory */}
         <h2 className="text-xl font-bold text-white mb-2">Backstory</h2>
@@ -480,7 +572,7 @@ export default function AssetDetailsCard({
           <p className="text-gray-300 leading-relaxed mb-4">{description}</p>
         )}
 
-        {/* Visibility Controls */}
+        {/* Visibility Controls - only show when editing */}
         {isEditing && (
           <div className="flex items-center justify-center mb-4">
             <VisibilitySlider
@@ -490,7 +582,7 @@ export default function AssetDetailsCard({
           </div>
         )}
 
-        {/* Comments Section */}
+        {/* Comments Section - only show if not editing */}
         {!isEditing && <CommentsSection commentCount={13} />}
 
         {/* Save / Cancel buttons for editing */}
@@ -498,12 +590,16 @@ export default function AssetDetailsCard({
           <div className="flex items-center justify-center gap-4 mt-4">
             <button
               onClick={handleSave}
-              className="px-4 py-2 bg-green-600 text-white rounded-md hover:bg-green-500"
+              disabled={isSaving}
+              className={`px-4 py-2 ${
+                isSaving ? "bg-green-800" : "bg-green-600 hover:bg-green-500"
+              } text-white rounded-md`}
             >
-              Save
+              {isSaving ? "Saving..." : "Save"}
             </button>
             <button
               onClick={handleCancel}
+              disabled={isSaving}
               className="px-4 py-2 bg-gray-500 text-white rounded-md hover:bg-gray-400"
             >
               Cancel
@@ -511,10 +607,10 @@ export default function AssetDetailsCard({
           </div>
         )}
 
-        {/* Back button */}
+        {/* Back button - only show when not editing */}
         {!isEditing && (
           <button
-            onClick={handleBack}
+            onClick={onBack}
             className="mt-6 px-4 py-2 bg-indigo-600 text-white rounded-md hover:bg-indigo-500"
           >
             Back
@@ -583,7 +679,7 @@ function DeleteModal({ assetName, onConfirm, onCancel }) {
           Are you sure you want to delete <br />
           <span className="text-red-600">{assetName}</span>?
         </h2>
-        <p className="mb-4">This action can’t be undone!</p>
+        <p className="mb-4">This action can&apos;t be undone!</p>
         <div className="flex justify-center gap-4">
           <button
             onClick={onConfirm}
