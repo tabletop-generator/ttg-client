@@ -243,7 +243,7 @@ export default function CollectionGrid({
             <div className="text-center text-gray-500">
               {isOwnProfile
                 ? "No collections available. Create one to get started!"
-                : "This user hasn&apos;t created any public collections yet."}
+                : "This user has not created any public collections yet."}
             </div>
           ) : (
             collections.map((collection) => {
