@@ -5,6 +5,17 @@
   padding: 1rem;
 }
 
+.roundedButton {
+  @apply w-10 h-10 flex items-center justify-center rounded-full;
+}
+
+/* Adjust size for screens 640px and below */
+@media (max-width: 640px) {
+  .roundedButton {
+    @apply w-8 h-8;
+  }
+}
+
 .banner {
   position: relative;
   width: 100%;
@@ -151,4 +162,18 @@
 .assetCard p {
   color: #9ca3af; /* gray-400 */
   text-transform: capitalize;
+}
+/* Common style for round icon buttons (like, star, share, edit) */
+.roundedButton {
+  @apply w-10 h-10 flex items-center justify-center rounded-full;
+}
+
+/* Gray background for round buttons */
+.bgGrayButton {
+  @apply bg-gray-700 hover:bg-gray-600;
+}
+
+/* Green background for share button when copied */
+.bgGreenButton {
+  @apply bg-green-500 hover:bg-green-600;
 }

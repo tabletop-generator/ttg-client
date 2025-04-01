@@ -1,4 +1,4 @@
-// Updated CollectionDetails.js - Key sections modified for ownership check
+/* eslint-disable @next/next/no-img-element */
 import {
   addAssetsToCollection,
   deleteCollectionById,
@@ -20,7 +20,7 @@ export default function CollectionDetails({
   userCollections,
   onBack,
   allAssets,
-  isOwnProfile = true, // Add isOwnProfile prop with default true for backward compatibility
+  isOwnProfile = true, // Default true for backward compatibility
 }) {
   const auth = useAuth();
   const router = useRouter();
@@ -40,21 +40,15 @@ export default function CollectionDetails({
   const [shareMessageType, setShareMessageType] = useState("");
   const dropdownRef = useRef(null);
 
-  // Check if the current user owns this collection
-  // Either through the isOwnProfile prop or by comparing owner IDs
+  // Check if the current user owns this collection either by prop or owner ID comparison
   const isCollectionOwner =
     isOwnProfile ||
     user?.hashedEmail === ownerId ||
     user?.hashedEmail === collection?.ownerId;
 
-  // Combine both user objects, ensuring the token is under 'id_token'
+  // Combine user objects to include id_token
   const combinedUser =
-    user && cognitoUser
-      ? {
-          ...user,
-          id_token: cognitoUser.id_token,
-        }
-      : null;
+    user && cognitoUser ? { ...user, id_token: cognitoUser.id_token } : null;
 
   // Fetch full collection details and load expanded asset details
   useEffect(() => {
@@ -66,9 +60,7 @@ export default function CollectionDetails({
         if (response && response.collection) {
           const collectionData = response.collection;
           setCurrentCollection(collectionData);
-
-          const fetchedOwnerId = collectionData.ownerId;
-          setOwnerId(fetchedOwnerId);
+          setOwnerId(collectionData.ownerId);
 
           if (collectionData.assets && collectionData.assets.length > 0) {
             const fullAssets = await Promise.all(
@@ -95,18 +87,16 @@ export default function CollectionDetails({
     fetchCollectionDetails();
   }, [cognitoUser, collection.id]);
 
-  // Handle adding an asset to the collection - only available to collection owner
+  // Handle adding an asset (only for collection owner)
   const handleAddAsset = async (asset) => {
     if (!isCollectionOwner) {
       console.warn("Cannot add assets to someone else's collection");
       return;
     }
-
     if (!cognitoUser?.id_token) {
       console.error("User authentication token is missing");
       return;
     }
-
     try {
       await addAssetsToCollection(cognitoUser, currentCollection.id, [
         asset.id || asset.uuid,
@@ -118,23 +108,20 @@ export default function CollectionDetails({
     }
   };
 
-  // Handle removing an asset from the collection - only available to collection owner
+  // Handle removing an asset (only for collection owner)
   const handleRemoveAsset = async (asset) => {
     if (!isCollectionOwner) {
       console.warn("Cannot remove assets from someone else's collection");
       return;
     }
-
     if (!cognitoUser?.id_token) {
       console.error("User authentication token is missing");
       return;
     }
-
     try {
       await removeAssetsFromCollection(cognitoUser, currentCollection.id, [
         asset.uuid,
       ]);
-
       setUpdatedAssets((prevAssets) =>
         prevAssets.filter((a) => (a.id || a.uuid) !== (asset.id || asset.uuid)),
       );
@@ -143,13 +130,15 @@ export default function CollectionDetails({
     }
   };
 
-  // Handle clicking an asset to navigate to its detail page
+  // Navigate to asset details page
   const handleAssetClick = (uuid) => {
     sessionStorage.setItem("previousPage", window.location.href);
     router.push(`/profile/${uuid}`);
   };
 
-  // Handle share functionality
+  // Build a shareable URL for this collection and handle share action
+  const collectionUrl = `${window.location.origin}/profile?tab=collections&collectionId=${currentCollection.id}`;
+
   const handleShare = () => {
     if (currentCollection.visibility === "private") {
       setShareMessage(
@@ -162,14 +151,8 @@ export default function CollectionDetails({
       }, 5000);
       return;
     }
-
-    // Create a URL object from the current URL
-    const currentUrl = new URL(window.location.href);
-    // Set or update the "collectionId" query parameter
-    currentUrl.searchParams.set("collectionId", currentCollection.id);
-
     navigator.clipboard
-      .writeText(currentUrl.toString())
+      .writeText(collectionUrl)
       .then(() => {
         setShareMessage("Copied to Clipboard!");
         setShareMessageType("success");
@@ -189,33 +172,30 @@ export default function CollectionDetails({
       });
   };
 
-  // Handle delete button click to show modal - only available to collection owner
+  // Handle delete button click (only for collection owner)
   const handleDeleteClick = () => {
     if (!isCollectionOwner) {
       console.warn("Cannot delete someone else's collection");
       return;
     }
-
     setShowDeleteModal(true);
   };
 
-  // Handle delete confirmation - only available to collection owner
+  // Handle delete confirmation (only for collection owner)
   const handleDeleteConfirm = async () => {
     if (!isCollectionOwner) {
       console.warn("Cannot delete someone else's collection");
       setShowDeleteModal(false);
       return;
     }
-
     if (!cognitoUser?.id_token) {
       console.error("User authentication token is missing");
       return;
     }
-
     try {
       await deleteCollectionById(cognitoUser, currentCollection.id);
       console.log("Collection deleted successfully!");
-      onBack(); // Navigate back to collections
+      onBack();
       setTimeout(() => window.location.reload(), 100);
     } catch (error) {
       console.error("Failed to delete collection:", error);
@@ -223,7 +203,7 @@ export default function CollectionDetails({
     setShowDeleteModal(false);
   };
 
-  // Handle delete cancel
+  // Cancel delete action
   const handleDeleteCancel = () => {
     setShowDeleteModal(false);
   };
@@ -262,19 +242,27 @@ export default function CollectionDetails({
             </span>
           </div>
 
-          <div className={styles.topSection}>
-            <button onClick={onBack} className={styles.backButton}>
-              Back to Collections
-            </button>
-            <div className={styles.privacyText}>
-              Privacy:{" "}
-              {currentCollection.visibility
-                ? currentCollection.visibility.charAt(0).toUpperCase() +
-                  currentCollection.visibility.slice(1)
-                : ""}
+          {/* Responsive Top Section */}
+          <div
+            className={`${styles.topSection} flex flex-wrap items-center justify-between gap-2`}
+          >
+            {/* Left Side: Back button & Privacy text */}
+            <div className="flex items-center gap-2">
+              <button onClick={onBack} className={styles.backButton}>
+                Back to Collections
+              </button>
+              <div className={styles.privacyText}>
+                Privacy:{" "}
+                {currentCollection.visibility
+                  ? currentCollection.visibility.charAt(0).toUpperCase() +
+                    currentCollection.visibility.slice(1)
+                  : ""}
+              </div>
             </div>
-            <div className={styles.rightButtons}>
-              {/* Add Asset button - Only show for collection owner */}
+
+            {/* Right Side: Action buttons */}
+            <div className="flex items-center gap-2">
+              {/* Add Asset button – only for collection owner */}
               {isCollectionOwner && (
                 <button
                   onClick={() => setShowAssetGrid(true)}
@@ -284,28 +272,40 @@ export default function CollectionDetails({
                 </button>
               )}
 
-              {/* Share button - Available to everyone */}
-              <button
-                onClick={handleShare}
-                className={copied ? styles.buttonCopied : styles.buttonRound}
-              >
-                <Share2 size={20} />
-              </button>
-
-              {/* Share message/confirmation */}
-              {shareMessage && (
-                <div
-                  className={
-                    shareMessageType === "error"
-                      ? styles.errorMessage
-                      : styles.successMessage
-                  }
+              {/* Share Button */}
+              <div className="relative">
+                <button
+                  onClick={handleShare}
+                  className={`w-10 h-10 ${styles.roundedButton} ${
+                    shareMessageType === "success"
+                      ? styles.bgGreenButton
+                      : styles.bgGrayButton
+                  }`}
+                  title="Share asset"
                 >
-                  {shareMessage}
-                </div>
-              )}
+                  <Share2 className="w-5 h-5 text-white fill-current" />
+                </button>
 
-              {/* More options menu - Only show for collection owner */}
+                {shareMessage && (
+                  <div
+                    className={`absolute bottom-full mb-2 left-1/2 -translate-x-1/2 transform px-3 py-1 text-sm rounded shadow-lg z-10 whitespace-nowrap ${
+                      shareMessageType === "error"
+                        ? "bg-red-500 text-white"
+                        : "bg-green-500 text-white"
+                    }`}
+                  >
+                    {shareMessage}
+                    <div
+                      className="absolute bottom-0 left-1/2 transform translate-y-full -translate-x-1/2 w-0 h-0
+                      border-l-[6px] border-l-transparent
+                      border-r-[6px] border-r-transparent
+                      border-t-[6px] border-t-white"
+                    ></div>
+                  </div>
+                )}
+              </div>
+
+              {/* More options menu – only for collection owner */}
               {isCollectionOwner && (
                 <div className="relative" ref={dropdownRef}>
                   <button
@@ -335,7 +335,7 @@ export default function CollectionDetails({
             </div>
           </div>
 
-          {/* Asset Selection Grid - Only shown for collection owner */}
+          {/* Asset Selection Grid – only shown for collection owner */}
           {isCollectionOwner && showAssetGrid && (
             <div className={styles.assetSelectionGrid}>
               <h3 className="text-lg font-bold">Select an Asset to Add</h3>
@@ -356,7 +356,6 @@ export default function CollectionDetails({
                         className={styles.assetCard}
                         onClick={() => handleAddAsset(asset)}
                       >
-                        {/* eslint-disable-next-line @next/next/no-img-element */}
                         <img src={asset.imageUrl} alt={asset.name} />
                         <h5>{asset.name}</h5>
                         <p>{asset.type}</p>
@@ -380,11 +379,10 @@ export default function CollectionDetails({
             </div>
           )}
 
-          {/* Asset Grid - Viewable by everyone */}
+          {/* Asset Grid – viewable by everyone */}
           <div className={styles.assetGrid}>
             {updatedAssets.map((asset) => (
               <div key={asset.id || asset.uuid} className={styles.assetCard}>
-                {/* eslint-disable-next-line @next/next/no-img-element */}
                 <img
                   src={asset.imageUrl}
                   alt={asset.name}
@@ -393,7 +391,7 @@ export default function CollectionDetails({
                 />
                 <h5>{asset.name}</h5>
                 <p>{asset.type}</p>
-                {/* Remove button - only show for collection owner */}
+                {/* Remove button – only for collection owner */}
                 {isCollectionOwner && (
                   <button
                     onClick={() => handleRemoveAsset(asset)}
@@ -420,15 +418,15 @@ export default function CollectionDetails({
   );
 }
 
-function DeleteModal({ assetName, onConfirm, onCancel }) {
+function DeleteModal({ collectionName, onConfirm, onCancel }) {
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
       <div className="bg-white text-black rounded-md p-6 w-80 text-center">
         <h2 className="text-xl font-bold mb-2">
-          Are you sure you want to delete <br /> this collection
-          <span className="text-red-600">{assetName}</span>?
+          Are you sure you want to delete <br /> this collection{" "}
+          <span className="text-red-600">{collectionName}</span>?
         </h2>
-        <p className="mb-4">This action can&apos;t be undone!</p>
+        <p className="mb-4">This action can’t be undone!</p>
         <div className="flex justify-center gap-4">
           <button
             onClick={onConfirm}
