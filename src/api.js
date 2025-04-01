@@ -261,7 +261,6 @@ export async function getAssetByID(user, uuid) {
 
     let creatorName = "Anonymous";
     if (data.asset && data.asset.user && data.asset.user.hashedEmail) {
-      // Fixed the typo: using 'response2' instead of 'respone2'
       const response2 = await getUser(user, data.asset.user.hashedEmail);
       if (response2 && response2.data && response2.data.user) {
         creatorName = response2.data.user.displayName;
@@ -288,8 +287,17 @@ export async function getAssetByID(user, uuid) {
 
 /***************************************************************
  * Function: updatePrismaUserInfo
- * Description: Sends a PATCH request to update a user information
- ****************************************************************/
+ * Description: Sends a PATCH request to update user information
+ *              using the provided authentication token.
+ * Parameters:
+ *   - userToken (string): The ID token of the authenticated user.
+ *   - hashedEmail (string): The hashed email identifier of the user.
+ *   - newInfo (Object): An object containing the updated user fields.
+ * Returns:
+ *   - Object: The parsed JSON response containing the updated user data.
+ * Throws:
+ *   - Error if the token or update data is missing, or if the API request fails.
+ ***************************************************************/
 
 export async function updatePrismaUserInfo(userToken, hashedEmail, newInfo) {
   console.log("Update User Request Sent ");
@@ -338,8 +346,17 @@ export async function updatePrismaUserInfo(userToken, hashedEmail, newInfo) {
 
 /***************************************************************
  * Function: updatePrismaAssetInfo
- * Description: Sends a PATCH request to update a user information
- ****************************************************************/
+ * Description: Sends a PATCH request to update asset information
+ *              using the authenticated user's credentials.
+ * Parameters:
+ *   - user (Object): The authenticated user object containing the ID token.
+ *   - uuid (string): The unique identifier (UUID) of the asset to update.
+ *   - updatedData (Object): An object containing updated asset fields.
+ * Returns:
+ *   - Object: The parsed JSON response with updated asset information.
+ * Throws:
+ *   - Error if the user, token, or UUID is missing, or if the API call fails.
+ ***************************************************************/
 
 export async function updatePrismaAssetInfo(user, uuid, updatedData) {
   if (!user?.id_token) {
@@ -385,8 +402,15 @@ export async function updatePrismaAssetInfo(user, uuid, updatedData) {
 
 /***************************************************************
  * Function: deletePrismaAsset
- * Description: Sends a DELETE request to update a user information
- ****************************************************************/
+ * Description: Sends a DELETE request to remove an asset by its UUID.
+ * Parameters:
+ *   - user (Object): The authenticated user object containing the ID token.
+ *   - uuid (string): The unique identifier (UUID) of the asset to delete.
+ * Returns:
+ *   - Response: The raw fetch response object from the API.
+ * Throws:
+ *   - Error if the user, token, or UUID is missing, or if the API call fails.
+ ***************************************************************/
 
 export async function deletePrismaAsset(user, uuid) {
   if (!user?.id_token) {
@@ -431,8 +455,16 @@ export async function deletePrismaAsset(user, uuid) {
 
 /***************************************************************
  * Function: postCollection
- * Description: Sends a POST request to create a collection
- ****************************************************************/
+ * Description: Sends a POST request to create a new collection
+ *              using the authenticated user's credentials.
+ * Parameters:
+ *   - user (Object): The authenticated user object containing the ID token.
+ *   - collectionInfo (Object): The details of the collection to create.
+ * Returns:
+ *   - Object: The response status and the created collection data.
+ * Throws:
+ *   - Error if the user token is missing, or if the API call fails.
+ ***************************************************************/
 
 export async function postCollection(user, collectionInfo) {
   console.log("Post a collection Request Sent ");
@@ -475,8 +507,18 @@ export async function postCollection(user, collectionInfo) {
 
 /***************************************************************
  * Function: updateCollectionDetails
- * Description: Sends a PATCH request to update the collection info
- ****************************************************************/
+ * Description: Sends a PATCH request to update information of an
+ *              existing collection by its ID.
+ * Parameters:
+ *   - user (Object): The authenticated user object containing the ID token.
+ *   - collectionId (string): The unique identifier of the collection to update.
+ *   - details (Object): The updated collection fields.
+ * Returns:
+ *   - Object: The parsed JSON response with updated collection data.
+ * Throws:
+ *   - Error if the user token is missing, or if the API request fails.
+ ***************************************************************/
+
 export async function updateCollectionDetails(user, collectionId, details) {
   console.log("Update a collection Request Sent ");
 
@@ -515,8 +557,19 @@ export async function updateCollectionDetails(user, collectionId, details) {
 
 /***************************************************************
  * Function: addAssetsToCollection
- * Description: Sends a PATCH request to add assets to a collection
- ****************************************************************/
+ * Description: Sends a PATCH request to add one or more assets
+ *              to a specific collection using the authenticated user.
+ * Parameters:
+ *   - user (Object): The authenticated user object containing the ID token.
+ *   - collectionId (string): The unique identifier of the collection.
+ *   - assetIds (Array<string>): An array of asset UUIDs to add to the collection.
+ * Returns:
+ *   - Object: The parsed JSON response from the API, typically including
+ *             the updated collection or a success status message.
+ * Throws:
+ *   - Error if the user or ID token is missing, if the request fails,
+ *     or if the response status is not OK.
+ ***************************************************************/
 export async function addAssetsToCollection(user, collectionId, assetIds) {
   console.log("add assets to a collection Request Sent ");
 
@@ -560,8 +613,19 @@ export async function addAssetsToCollection(user, collectionId, assetIds) {
 
 /***************************************************************
  * Function: removeAssetsFromCollection
- * Description: Sends a PATCH request to remove assets from a collection
- ****************************************************************/
+ * Description: Sends a PATCH request to remove one or more assets
+ *              from a specific collection using the authenticated user.
+ * Parameters:
+ *   - user (Object): The authenticated user object containing the ID token.
+ *   - collectionId (string): The unique identifier of the collection.
+ *   - assetIds (Array<string>): An array of asset UUIDs to remove from the collection.
+ * Returns:
+ *   - Object: The parsed JSON response from the API, typically including
+ *             the updated collection or status message.
+ * Throws:
+ *   - Error if the user or ID token is missing, if the request fails,
+ *     or if the response status is not OK.
+ ***************************************************************/
 export async function removeAssetsFromCollection(user, collectionId, assetIds) {
   console.log("remove assets from a collection Request Sent ");
 
@@ -607,10 +671,19 @@ export async function removeAssetsFromCollection(user, collectionId, assetIds) {
 }
 
 /***************************************************************
- * Function: getCollection
- * Description: Sends a GET request to all collections
- ****************************************************************/
-
+ * Function: getCollectionById
+ * Description: Sends a GET request to retrieve a specific collection
+ *              by its ID using the authenticated user's credentials.
+ * Parameters:
+ *   - user (Object): The authenticated user object containing the ID token.
+ *   - collectionId (string): The unique identifier of the collection to fetch.
+ * Returns:
+ *   - Object: The parsed JSON response from the API, typically including
+ *             the collection data under the "collection" key.
+ * Throws:
+ *   - Error if the user or ID token is missing, if the API request fails,
+ *     or if the response status is not OK.
+ ***************************************************************/
 export async function getCollection(user, userId, expand = true) {
   if (!user?.id_token) {
     throw new Error("User is not authenticated. Missing id_token.");
@@ -656,10 +729,19 @@ export async function getCollection(user, userId, expand = true) {
 }
 
 /***************************************************************
- * Function: getCollectionsByid
- * Description: Sends a GET request to a collection by id
- ****************************************************************/
-
+ * Function: deleteCollectionById
+ * Description: Sends a DELETE request to remove a specific collection
+ *              by its ID using the authenticated user's credentials.
+ * Parameters:
+ *   - user (Object): The authenticated user object containing the ID token.
+ *   - collectionId (string): The unique identifier of the collection to delete.
+ * Returns:
+ *   - Object: The parsed JSON response from the API, usually including
+ *             status and a success message.
+ * Throws:
+ *   - Error if the user or ID token is missing, if the API request fails,
+ *     or if the response status is not OK.
+ ***************************************************************/
 export async function getCollectionById(user, collectionId) {
   if (!user?.id_token) {
     throw new Error("User authentication token is missing");
@@ -692,8 +774,17 @@ export async function getCollectionById(user, collectionId) {
 
 /***************************************************************
  * Function: deleteCollectionById
- * Description: Sends a DELETE request to all collections
- ****************************************************************/
+ * Description: Sends a DELETE request to remove a specific collection
+ *              by its ID using the authenticated user's credentials.
+ * Parameters:
+ *   - user (Object): The authenticated user object containing the ID token.
+ *   - collectionId (string): The unique identifier of the collection to delete.
+ * Returns:
+ *   - Object: The parsed JSON response from the API, typically including
+ *             a status and confirmation message.
+ * Throws:
+ *   - Error if the user or ID token is missing, or if the API request fails.
+ ***************************************************************/
 
 export async function deleteCollectionById(user, collectionId) {
   console.error("deleteCollectionById was called");
@@ -775,6 +866,232 @@ export async function getPublicAssets(user) {
     };
   } catch (error) {
     console.error("Error during getPublicAssets call:", error);
+    throw error;
+  }
+}
+
+/*********************
+ * Function: getComments Fetches comments associated with a specific asset from the API.
+ * Parameters:
+ *   - assetId (string): The unique identifier of the asset for which
+ *     comments are being requested.
+ * Returns:
+ *   - Object: Contains the comments data retrieved from the API.
+ * Throws:
+ *   - Error if the assetId is missing.
+ *   - Error if the API call fails or the response has an unexpected structure.
+ * *********************/
+export async function getComments(assetId) {
+  console.log("getComments: comment Request Sent");
+
+  if (!assetId) {
+    throw new Error("Asset ID is missing");
+  }
+  try {
+    console.log("Calling getComments API...");
+    // Construct URL with assetId as query parameter
+    const response = await fetch(`${apiUrl}/v1/comments?assetId=${assetId}`);
+
+    // Check if the response is OK (status 200-299)
+    if (!response.ok) {
+      throw new Error(`Failed to fetch comments, status: ${response.status}`);
+    }
+
+    // Parse the JSON response from the backend
+    const json = await response.json();
+    console.log("API response:", json);
+
+    // Check for the expected structure
+    if (json.success && json.data && json.data.comments) {
+      return json.data;
+    } else if (json.comments) {
+      return json;
+    } else {
+      throw new Error("Invalid response structure from getComments API");
+    }
+  } catch (error) {
+    console.error("Error during getComments call:", error);
+    throw error;
+  }
+}
+
+/*********************
+ * Function: postComments
+ * Description: Posts a new comment for a specific asset to the API.
+ * Parameters:
+ *   - user: An object representing the authenticated user. Must include a valid `id_token`.
+ *   - assetId: A string representing the asset's unique identifier (UUID or ID).
+ *   - commentBody: A string containing the text of the comment to be posted.
+ * Returns:
+ *   - A Promise that resolves to an object containing the HTTP status and the parsed response data.
+ * Throws:
+ *   - An Error if the user authentication token, assetId, or commentBody is missing,
+ *     or if the API call fails.
+ * *********************/
+export async function postComments(user, assetId, commentBody) {
+  console.log("Post a comment Request Sent");
+
+  if (!user?.id_token) {
+    throw new Error("User authentication token is missing");
+  }
+  if (!assetId) {
+    throw new Error("Asset ID is missing");
+  }
+  if (!commentBody) {
+    throw new Error("Comment Body is missing");
+  }
+
+  if (isDebug) {
+    console.log(`Request to post a comment by: ${user.id}
+      For asset: ${assetId}
+      Comment: ${commentBody}
+      `);
+  }
+
+  try {
+    console.log("Calling post comment API...");
+
+    const response = await fetch(`${apiUrl}/v1/comments`, {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${user.id_token}`,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({ assetId, body: commentBody }),
+    });
+
+    if (!response.ok) {
+      const errorDetails = await response.text();
+      console.error(
+        `API call failed with status: ${response.status}, Details: ${errorDetails}`,
+      );
+      throw new Error(`API call failed with status: ${response.status}`);
+    }
+
+    const data = await response.json();
+    console.log("data from post: ", data);
+    return { status: response.status, data };
+  } catch (error) {
+    console.error("Error during postComments call:", error);
+    throw error;
+  }
+}
+
+/*********************
+ * Function: editComment
+ * Sends a PATCH request to update an existing comment for the specified user.
+ * Parameters:
+ *  - user (Object): The authenticated user object containing an id_token.
+ *  - commentId (string | number): The unique identifier of the comment to be edited.
+ *  - newBody (string): The updated text content of the comment.
+ * Returns:
+ *  - An object containing:
+ *      - status (number): HTTP status code 200 if successful.
+ *      - comment (Object): The updated comment object returned from the API.
+ * Throws:
+ *  - Error if the user, token, comment ID, or new comment body is missing or invalid.
+ *  - Error if the request fails or the response structure is invalid.
+ *********************/
+
+export async function editComment(user, commentId, newBody) {
+  // User is combined user at the front (cognito+prisma)
+  if (!user) {
+    throw new Error("User is missing");
+  }
+
+  if (!user?.id_token) {
+    throw new Error("User authentication token is missing");
+  }
+
+  if (!commentId) {
+    throw new Error("Comment ID is missing");
+  }
+  if (!newBody || newBody.trim().length === 0) {
+    throw new Error("New comment body is required");
+  }
+
+  try {
+    const response = await fetch(`${apiUrl}/v1/comments/${commentId}`, {
+      method: "PATCH",
+      headers: {
+        Authorization: `Bearer ${user.id_token}`,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({ body: newBody }),
+    });
+
+    if (!response.ok) {
+      throw new Error(`Failed to update comment, status: ${response.status}`);
+    }
+
+    const patchedComment = await response.json();
+    console.log("editComment response JSON:", patchedComment);
+
+    // Wrap the returned comment with a status for consistency
+    if (patchedComment.status === "ok" && patchedComment.comment) {
+      return {
+        status: 200,
+        comment: patchedComment.comment,
+      };
+    } else {
+      throw new Error("Invalid response structure from update comment API");
+    }
+  } catch (error) {
+    console.error("Error during updateComment call:", error);
+    throw error;
+  }
+}
+
+/****************************************************************
+ * Function: deleteComment
+ * Description: Sends a DELETE request to remove a specific comment
+ *              by its ID using the authenticated user's credentials.
+ * Parameters:
+ *   - user (Object): The authenticated user object containing the ID token.
+ *   - commentId (string): The unique identifier of the comment to delete.
+ * Returns:
+ *   - Object: The parsed JSON response from the API.
+ * Throws:
+ *   - Error if the user or ID token is missing, if the commentId is invalid,
+ *     or if the API call fails.
+ ****************************************************************/
+
+export async function deleteComment(user, commentId) {
+  console.error("Calling deleteComment....");
+  // User is combined user at the front (cognito+prisma)
+  if (!user) {
+    throw new Error("User is missing");
+  }
+
+  if (!user?.id_token) {
+    throw new Error("User authentication token is missing");
+  }
+
+  if (!commentId) {
+    throw new Error("Comment ID is missing");
+  }
+
+  try {
+    const url = `${apiUrl}/v1/comments/${commentId}`;
+    const response = await fetch(url, {
+      method: "DELETE",
+      headers: {
+        Authorization: `Bearer ${user.id_token}`,
+        "Content-Type": "application/json",
+      },
+    });
+
+    if (isDebug) console.log("Delete comment by ID response:", response);
+
+    if (!response.ok) {
+      const errorDetails = await response.text();
+      throw new Error(`API call failed: ${response.status} ${errorDetails}`);
+    }
+
+    // Return the JSON response (e.g., { status: "ok", message: "Comment deleted successfully" })
+    return await response.json();
+  } catch (error) {
+    console.error("Error deleting comment:", error);
     throw error;
   }
 }

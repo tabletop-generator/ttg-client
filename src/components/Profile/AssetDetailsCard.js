@@ -4,6 +4,7 @@ import {
   addAssetsToCollection,
   deletePrismaAsset,
   getCollection,
+  getCollectionById,
   postCollection,
   updatePrismaAssetInfo,
 } from "@/api";
@@ -29,7 +30,7 @@ export default function AssetDetailsCard({
   const auth = useAuth();
   const router = useRouter();
   const cognitoUser = auth.user;
-  const userColl = user?.collections ? [...user.collections] : [];
+  const [userColl, setUserColl] = useState([]);
 
   // Core asset states
   const [visibility, setVisibility] = useState(asset?.visibility || "private");
@@ -71,16 +72,58 @@ export default function AssetDetailsCard({
     }
   };
 
+  // Fetch collections
+  useEffect(() => {
+    const fetchCollections = async () => {
+      try {
+        const collectionResponse = await getCollection(
+          auth.user,
+          user.hashedEmail,
+        );
+        if (collectionResponse && collectionResponse.collections) {
+          console.log(collectionResponse);
+          setUserColl(collectionResponse.collections);
+        } else {
+          console.warn("Unexpected collection response:", collectionResponse);
+        }
+      } catch (error) {
+        console.error("Error fetching collections:", error);
+      }
+    };
+
+    if (auth.user && user?.hashedEmail) {
+      fetchCollections();
+    }
+  }, [auth.user, user?.hashedEmail]);
+
   // Check if asset is in a collection
-  const isAssetInCollection = async (assetUuid) => {
-    if (!assetUuid || !isAuthenticated) return false;
+  const isAssetInAnyCollection = async (assetUuid) => {
+    if (!assetUuid || !isAuthenticated || !userColl.length) return false;
 
     try {
-      const collection = await getCollection(cognitoUser);
-      if (!collection || !collection.assets) return false;
-      return collection.assets.some((mockAsset) => mockAsset.id === assetUuid);
-    } catch (error) {
-      console.error("Error checking if asset is in collection:", error);
+      // Loop through each collection stored in state
+      for (const coll of userColl) {
+        // If assets are already loaded in the collection, use them
+        let assets = coll.assets;
+
+        // If not, fetch the collection details to get its assets
+        if (!assets) {
+          const res = await getCollectionById(cognitoUser, coll.id);
+          assets = res?.collection?.assets || [];
+        }
+
+        const match = assets.some((entry) => {
+          if (typeof entry === "string") {
+            return entry === assetUuid;
+          } else {
+            return entry.uuid === assetUuid || entry.id === assetUuid;
+          }
+        });
+        if (match) return true;
+      }
+      return false;
+    } catch (err) {
+      console.error("Error fetching collection assets:", err);
       return false;
     }
   };
@@ -89,9 +132,9 @@ export default function AssetDetailsCard({
     (async () => {
       if (asset?.uuid && isAuthenticated) {
         try {
-          const inCollection = await isAssetInCollection(asset.uuid);
-          console.log("Asset in collection:", inCollection);
-          setIsInCollection(inCollection);
+          const found = await isAssetInAnyCollection(asset.uuid);
+          console.log("Asset in any collection:", found);
+          setIsInCollection(found);
         } catch (error) {
           console.error("Error checking collection status:", error);
           setIsInCollection(false);
@@ -100,7 +143,7 @@ export default function AssetDetailsCard({
         setIsInCollection(false);
       }
     })();
-  }, [asset, isAuthenticated]);
+  }, [asset, isAuthenticated, userColl]);
 
   // ---- HANDLERS ----
   const handleShare = () => {
@@ -602,7 +645,13 @@ export default function AssetDetailsCard({
         )}
 
         {/* Comments Section - only show if not editing */}
-        {!isEditing && <CommentsSection commentCount={13} />}
+        {!isEditing && (
+          <CommentsSection
+            asset={asset}
+            user={user}
+            cognitoUser={cognitoUser}
+          />
+        )}
 
         {/* Save / Cancel buttons for editing */}
         {isEditing && (
@@ -698,7 +747,7 @@ function DeleteModal({ assetName, onConfirm, onCancel }) {
           Are you sure you want to delete <br />
           <span className="text-red-600">{assetName}</span>?
         </h2>
-        <p className="mb-4">This action can&apos;t be undone!</p>
+        <p className="mb-4">This action cannot be undone!</p>
         <div className="flex justify-center gap-4">
           <button
             onClick={onConfirm}
