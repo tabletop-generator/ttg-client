@@ -168,11 +168,27 @@ const cognitoAuthConfig = {
 
     return Promise.resolve(); //Ensures function always resolves
   },
-  // See https://authts.github.io/oidc-client-ts/index.html#md:provider-specific-settings
-  // no revoke of "access token" (https://github.com/authts/oidc-client-ts/issues/262)
-  revokeTokenTypes: ["refresh_token"],
-  // no silent renew via "prompt=none" (https://github.com/authts/oidc-client-ts/issues/366)
-  automaticSilentRenew: false,
+  // Token revocation settings
+  revokeTokenTypes: ["access_token", "refresh_token"], // Revoke both token types
+  automaticSilentRenew: false, // No silent renew
+
+  // Add an explicit signout callback to ensure proper cleanup
+  onSignoutRedirectCallback: () => {
+    console.log("Signout callback triggered");
+    // Clear all local application state
+    localStorage.clear();
+    sessionStorage.clear();
+
+    // Clear all cookies
+    document.cookie.split(";").forEach((cookie) => {
+      const [name] = cookie.trim().split("=");
+      document.cookie = `${name}=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;`;
+    });
+
+    // Return to the home page or sign-in page
+    window.location.href =
+      process.env.NEXT_PUBLIC_OAUTH_SIGN_OUT_REDIRECT_URL || "/";
+  },
 };
 
 export default cognitoAuthConfig;
