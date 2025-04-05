@@ -62,7 +62,7 @@ function AssetDetails() {
 
         setAsset(response.data.asset);
 
-        // Verify this is a public asset if user is not authenticated
+        // Verify this is a public asset if user isn't authenticated
         if (
           !auth.isAuthenticated &&
           response.data.asset.visibility !== "public"
