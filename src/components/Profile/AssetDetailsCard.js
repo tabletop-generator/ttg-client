@@ -297,9 +297,39 @@ export default function AssetDetailsCard({
     setLikes((prev) => (!isLiked ? prev + 1 : Math.max(prev - 1, 0)));
   };
 
-  const handleToggleVisibility = (newVisibility) => {
+  const handleToggleVisibility = async (newVisibility) => {
+    // If we're in editing mode, just update the state (it will be saved with all changes on "Save")
+    if (isEditing) {
+      setVisibility(newVisibility);
+      console.log("Visibility updated to:", newVisibility);
+      return;
+    }
+
+    // If not in editing mode, update state and save immediately
     setVisibility(newVisibility);
-    console.log("Visibility:", newVisibility);
+    console.log("Saving visibility change to:", newVisibility);
+
+    // Show a saving indicator
+    setIsSaving(true);
+
+    try {
+      // Ensure we have the right ID format
+      const assetId = asset?.uuid || asset?.id;
+
+      // Only update the visibility field
+      const newInfo = { visibility: newVisibility };
+
+      // Perform the update
+      await updatePrismaAssetInfo(cognitoUser, assetId, newInfo);
+      console.log("Asset visibility updated successfully");
+    } catch (error) {
+      console.error("Error updating asset visibility:", error);
+      // Revert to previous visibility state on error
+      setVisibility(visibility);
+      alert("Failed to update visibility. Please try again.");
+    } finally {
+      setIsSaving(false);
+    }
   };
 
   const handleSave = async () => {
@@ -475,11 +505,21 @@ export default function AssetDetailsCard({
             : "N/A"}
         </p>
 
-        {!isEditing && (
-          <p className="text-gray-400 mb-4">
-            <strong>Visibility:</strong>{" "}
-            <span className="text-white capitalize">{visibility}</span>
-          </p>
+        {/* Visibility Controls - only show when owner & NOT editing */}
+        {isMyAsset && !isEditing && (
+          <div className="mt-6 mb-6">
+            <div className="flex items-center gap-3 mb-2">
+              <strong className="text-gray-400">Visibility:</strong>
+              <span className="text-white capitalize">{visibility}</span>
+              {isSaving && <span className="text-yellow-400">(Saving...)</span>}
+            </div>
+            <div className="flex items-center justify-center">
+              <VisibilitySlider
+                visibility={visibility}
+                onToggle={handleToggleVisibility}
+              />
+            </div>
+          </div>
         )}
 
         {/* Buttons: Like, Star (for collection), Share, Edit */}
