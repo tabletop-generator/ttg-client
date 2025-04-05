@@ -9,7 +9,7 @@ import {
   MenuItem,
   MenuItems,
 } from "@headlessui/react";
-import { Bars3Icon, BellIcon, XMarkIcon } from "@heroicons/react/24/outline";
+import { Bars3Icon, XMarkIcon } from "@heroicons/react/24/outline";
 import NextLink from "next/link";
 import { useRouter } from "next/router";
 import { Log } from "oidc-client-ts";
@@ -27,6 +27,9 @@ export default function Layout({ children }) {
 
   const [activeItem, setActiveItem] = useState(null);
 
+  // track logging out to trigger UI changes
+  const [isLoggingOut, setIsLoggingOut] = useState(false);
+
   // https://authts.github.io/oidc-client-ts/index.html#md:logging
   if (process.env.NODE_ENV !== "development") {
     Log.setLevel(Log.NONE);
@@ -35,31 +38,52 @@ export default function Layout({ children }) {
   }
 
   const handleSignOut = () => {
-    const signOutUrl = () => {
+    try {
+      // Set logging out state to true immediately to trigger UI changes
+      setIsLoggingOut(true);
+
+      console.log("Starting sign-out process...");
+
+      // Create the signout URL before clearing any data
       const clientId = process.env.NEXT_PUBLIC_AWS_COGNITO_CLIENT_ID;
       const logoutUri = process.env.NEXT_PUBLIC_OAUTH_SIGN_OUT_REDIRECT_URL;
       const cognitoDomain = process.env.NEXT_PUBLIC_COGNITO_DOMAIN;
-      return `${cognitoDomain}/logout?client_id=${clientId}&logout_uri=${encodeURIComponent(logoutUri)}`;
-    };
 
-    // Remove user from the oidc context
-    auth.removeUser();
+      // Ensure clientId is available
+      if (!clientId) {
+        console.error("Missing client ID for sign-out");
+      }
 
-    /********
-     * Clearing up the app before sign-out
-     *******/
+      // Construct the sign-out URL explicitly with all required parameters
+      const signOutUrl = `${cognitoDomain}/logout?client_id=${clientId}&logout_uri=${encodeURIComponent(logoutUri)}`;
 
-    setUser(null); // Set user to null to clear cache
+      console.log("Sign-out URL:", signOutUrl);
 
-    // Clear local storage info
-    localStorage.clear();
-    sessionStorage.clear();
+      // Now clear application state
+      setUser(null);
 
-    // Manually triggers a storage event to notify other parts of the app (or open tabs) that the localStorage or sessionStorage has been modified
-    window.dispatchEvent(new Event("storage"));
+      // Clear storage
+      localStorage.clear();
+      sessionStorage.clear();
 
-    // Redirect to the Cognito sign-out URL
-    window.location.href = signOutUrl();
+      // Clear cookies
+      document.cookie.split(";").forEach((cookie) => {
+        const [name] = cookie.trim().split("=");
+        document.cookie = `${name}=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;`;
+      });
+
+      // Notify other parts of the app
+      window.dispatchEvent(new Event("storage"));
+
+      // Add a slight delay before redirecting to ensure UI has time to update
+      setTimeout(() => {
+        window.location.href = signOutUrl;
+      }, 300);
+    } catch (error) {
+      console.error("Error during sign-out:", error);
+      // If there's an error, try a basic redirect
+      window.location.href = "/";
+    }
   };
 
   // See https://github.com/authts/react-oidc-context?tab=readme-ov-file#adding-event-listeners
@@ -197,22 +221,28 @@ export default function Layout({ children }) {
                 <div className="hidden md:block">
                   {auth?.isAuthenticated && (
                     <div className="ml-4 flex items-center md:ml-6">
-                      <button
-                        type="button"
-                        className="relative rounded-full bg-gray-800 p-1 text-gray-400 hover:text-white focus:outline-none focus:ring-2 focus:ring-white focus:ring-offset-2 focus:ring-offset-gray-800"
-                      >
-                        <span className="sr-only">View notifications</span>
-                        <BellIcon aria-hidden="true" className="size-6" />
-                      </button>
                       <Menu as="div" className="relative ml-3">
                         <div>
                           <MenuButton className="relative flex max-w-xs items-center rounded-full bg-gray-800 text-sm focus:outline-none focus:ring-2 focus:ring-white focus:ring-offset-2 focus:ring-offset-gray-800">
                             <span className="sr-only">Open user menu</span>
-                            <img
-                              alt="User profile"
-                              src={userInfo?.profilePictureUrl} //use the fetch user info for img url (Desktop view)
-                              className="size-8 rounded-full"
-                            />
+                            {!isLoggingOut ? (
+                              <img
+                                alt="User profile"
+                                src={userInfo?.profilePictureUrl}
+                                className="size-8 rounded-full"
+                                onError={(e) => {
+                                  // If image fails to load, use a fallback
+                                  e.target.src = "/placeholder/p01.png";
+                                }}
+                              />
+                            ) : (
+                              // Show a neutral loading indicator instead of potentially broken image
+                              <div className="size-8 rounded-full bg-gray-600 flex items-center justify-center">
+                                <span className="text-xs text-gray-300">
+                                  ...
+                                </span>
+                              </div>
+                            )}
                           </MenuButton>
                         </div>
                         <MenuItems className="absolute right-0 z-10 mt-2 w-48 origin-top-right rounded-md bg-white py-1 shadow-lg ring-1 ring-black/5 focus:outline-none">
@@ -278,11 +308,20 @@ export default function Layout({ children }) {
                 <div className="border-t border-gray-700 pb-3 pt-4">
                   <div className="flex items-center px-5">
                     <div className="shrink-0">
-                      <img
-                        alt=""
-                        src={userInfo?.profilePictureUrl} //use the fetch user info for img url (Mobile view)
-                        className="size-10 rounded-full"
-                      />
+                      {!isLoggingOut ? (
+                        <img
+                          alt=""
+                          src={userInfo?.profilePictureUrl}
+                          className="size-10 rounded-full"
+                          onError={(e) => {
+                            e.target.src = "/placeholder/p01.png";
+                          }}
+                        />
+                      ) : (
+                        <div className="size-10 rounded-full bg-gray-600 flex items-center justify-center">
+                          <span className="text-xs text-gray-300">...</span>
+                        </div>
+                      )}
                     </div>
                     <div className="ml-3">
                       {/* Display the user's name or a fallback */}
