@@ -1095,3 +1095,94 @@ export async function deleteComment(user, commentId) {
     throw error;
   }
 }
+
+/****************************************************************************************************
+ * Function: likeAsset
+ * Description: Sends a PATCH request to toggle a like on an asset.
+ *              The backend will check if the user has already liked the asset and will remove the like,
+ *              or create a like if it doesn't exist.
+ * Parameters:
+ *   - user (Object): The authenticated user object containing the ID token.
+ *   - uuid (string): The unique identifier (UUID) of the asset to like/unlike.
+ * Returns:
+ *   - Object: The parsed JSON response with updated like count.
+ * Throws:
+ *   - Error if the user token or UUID is missing, or if the API call fails.
+ *****************************************************************************************************/
+export async function likeAsset(user, uuid) {
+  if (!user?.id_token) {
+    throw new Error("User authentication token is missing");
+  }
+
+  if (!uuid) {
+    throw new Error("Asset UUID is missing");
+  }
+
+  try {
+    const response = await fetch(`${apiUrl}/v1/assets/${uuid}`, {
+      method: "PATCH",
+      headers: {
+        Authorization: `Bearer ${user.id_token}`,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({ like: true }),
+    });
+
+    const data = await response.json();
+
+    if (!response.ok) {
+      throw new Error(`API Error: ${response.status}`);
+    }
+
+    console.log("Asset like toggled successfully:", data);
+    return data;
+  } catch (error) {
+    console.error("Error toggling like on asset:", error);
+    throw error;
+  }
+}
+
+/**
+ * Function: unlikeAsset
+ * Description: Sends a PATCH request to unlike an asset.
+ *              This function assumes the asset is already liked and
+ *              uses the same backend endpoint (which toggles the like state).
+ * Parameters:
+ *   - user (Object): The authenticated user object containing the ID token.
+ *   - uuid (string): The unique identifier (UUID) of the asset to unlike.
+ * Returns:
+ *   - Object: The parsed JSON response with updated like count.
+ * Throws:
+ *   - Error if the user token or UUID is missing, or if the API call fails.
+ */
+export async function unlikeAsset(user, uuid) {
+  if (!user?.id_token) {
+    throw new Error("User authentication token is missing");
+  }
+  if (!uuid) {
+    throw new Error("Asset UUID is missing");
+  }
+
+  try {
+    const response = await fetch(`${apiUrl}/v1/assets/${uuid}`, {
+      method: "PATCH",
+      headers: {
+        Authorization: `Bearer ${user.id_token}`,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({ like: true }),
+    });
+
+    const data = await response.json();
+
+    if (!response.ok) {
+      throw new Error(`API Error: ${response.status}`);
+    }
+
+    console.log("Asset unliked successfully:", data);
+    return data;
+  } catch (error) {
+    console.error("Error unliking asset:", error);
+    throw error;
+  }
+}

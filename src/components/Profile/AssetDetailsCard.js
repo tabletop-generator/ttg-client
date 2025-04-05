@@ -5,7 +5,9 @@ import {
   deletePrismaAsset,
   getCollection,
   getCollectionById,
+  likeAsset,
   postCollection,
+  unlikeAsset,
   updatePrismaAssetInfo,
 } from "@/api";
 import CommentsSection from "@/components/Profile/CommentsSection";
@@ -95,6 +97,13 @@ export default function AssetDetailsCard({
       fetchCollections();
     }
   }, [auth.user, user?.hashedEmail]);
+
+  // Initialize isLiked state based on asset.likedBy
+  useEffect(() => {
+    if (asset.likedBy && user?.hashedEmail) {
+      setIsLiked(asset.likedBy.includes(user.hashedEmail));
+    }
+  }, [asset.likedBy, user]);
 
   // Check if asset is in a collection
   const isAssetInAnyCollection = async (assetUuid) => {
@@ -287,16 +296,6 @@ export default function AssetDetailsCard({
     }
   };
 
-  const handleLike = () => {
-    if (!isAuthenticated) {
-      handleUnauthenticatedAction("like");
-      return;
-    }
-
-    setIsLiked(!isLiked);
-    setLikes((prev) => (!isLiked ? prev + 1 : Math.max(prev - 1, 0)));
-  };
-
   const handleToggleVisibility = async (newVisibility) => {
     // If we're in editing mode, just update the state (it will be saved with all changes on "Save")
     if (isEditing) {
@@ -329,6 +328,28 @@ export default function AssetDetailsCard({
       alert("Failed to update visibility. Please try again.");
     } finally {
       setIsSaving(false);
+    }
+  };
+
+  const handleToggleLike = async () => {
+    if (!isAuthenticated) {
+      handleUnauthenticatedAction("like/unlike");
+      return;
+    }
+    try {
+      if (isLiked) {
+        // Asset is liked, so unlike it
+        const response = await unlikeAsset(cognitoUser, asset.uuid);
+        setLikes(response.likes);
+        setIsLiked(false);
+      } else {
+        // Asset is not liked, so like it
+        const response = await likeAsset(cognitoUser, asset.uuid);
+        setLikes(response.likes);
+        setIsLiked(true);
+      }
+    } catch (error) {
+      console.error("Error toggling like on asset:", error);
     }
   };
 
@@ -527,7 +548,7 @@ export default function AssetDetailsCard({
           <div className="flex items-center justify-center gap-4 mb-6">
             {/* Like Button */}
             <button
-              onClick={handleLike}
+              onClick={handleToggleLike}
               className={`${styles.roundedButton} w-10 h-10 hover:opacity-80 ${
                 isLiked ? "bg-red-500 text-white" : "bg-gray-700 text-gray-300"
               }`}
