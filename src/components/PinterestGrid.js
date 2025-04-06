@@ -220,7 +220,7 @@ export default function PinterestGrid({
     if (JSON.stringify(results) !== JSON.stringify(filteredAssets)) {
       setFilteredAssets(results);
     }
-  }, [assets, stableSearchQuery, stableFilters]);
+  }, [assets, stableSearchQuery, stableFilters, filteredAssets]);
 
   // Handle click on an asset
   const handleAssetClick = (asset) => {
@@ -238,8 +238,7 @@ export default function PinterestGrid({
     // Store current page for back button functionality
     sessionStorage.setItem("previousPage", window.location.href);
 
-    // Navigate to asset details page
-    router.push(`/profile/${asset.uuid}`);
+    router.push(`/discover/${asset.uuid}`);
   };
 
   if (loading) {

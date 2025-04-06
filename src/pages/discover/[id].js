@@ -1,5 +1,4 @@
-// src/pages/profile/[id].js - Complete revised version
-import { getAssetByID } from "@/api";
+// src/pages/discover/[id].js
 import AssetDetailsCard from "@/components/Profile/AssetDetailsCard";
 import { useUser } from "@/context/UserContext";
 import { useRouter } from "next/router";
@@ -17,6 +16,8 @@ function AssetDetails() {
   const [userCollections, setUserCollections] = useState(
     user?.collections ?? [],
   );
+  // Add a new state for guest preview mode
+  const [guestPreviewMode, setGuestPreviewMode] = useState(false);
 
   useEffect(() => {
     // Wait for router to be ready and ID to be available
@@ -42,38 +43,112 @@ function AssetDetails() {
           return;
         }
 
-        // Wait for auth to be ready before making the API call
-        if (auth.isLoading) {
-          return;
-        }
+        //debug
+        console.log(
+          "Auth status:",
+          auth.isAuthenticated ? "Authenticated" : "Guest",
+        );
+        // Try to fetch the real asset regardless of authentication status
+        try {
+          // Create headers with or without authorization
+          const headers = {
+            "Content-Type": "application/json",
+          };
 
-        // Pass auth user if authenticated
-        console.log("Auth state:", auth.isAuthenticated, auth.isLoading);
-        const response = await getAssetByID(auth.user, id);
+          // Add authorization header if authenticated
+          if (auth.isAuthenticated && auth.user?.id_token) {
+            headers.Authorization = `Bearer ${auth.user.id_token}`;
+          }
 
-        console.log("Asset fetch response:", response);
-
-        if (!response || !response.data || !response.data.asset) {
-          console.error("Invalid response structure:", response);
-          setError("Invalid response from server");
-          setIsLoading(false);
-          return;
-        }
-
-        setAsset(response.data.asset);
-
-        // Verify this is a public asset if user is not authenticated
-        if (
-          !auth.isAuthenticated &&
-          response.data.asset.visibility !== "public"
-        ) {
-          setError(
-            "This asset is private and can only be viewed by the owner or authenticated users.",
+          // Direct API call to fetch the asset for unauthenticated users
+          const response = await fetch(
+            `${process.env.NEXT_PUBLIC_API_URL || "http://localhost:8080"}/v1/assets/${id}`,
+            {
+              method: "GET",
+              headers,
+            },
           );
+
+          // debug
+          console.log("API Response status:", response.status);
+
+          if (!response.ok) {
+            throw new Error(`Failed to fetch asset: ${response.status}`);
+          }
+
+          const data = await response.json();
+
+          // Set guest preview mode, but use the real asset data
+          if (!auth.isAuthenticated) {
+            setGuestPreviewMode(true);
+          }
+
+          const processedAsset = {
+            ...data.asset,
+            creatorName:
+              data.asset.creatorName ||
+              data.asset.user?.displayName ||
+              "Unknown Creator",
+          };
+
+          // Add debug info
+          console.log("Creator info:", {
+            original: data.asset.creatorName,
+            processed: processedAsset.creatorName,
+            userInfo: data.asset.user,
+          });
+
+          setAsset(processedAsset);
+
+          // debug logging for user profile:
+          console.log("Asset data received:", {
+            hasCreator: !!data.asset.user,
+            hasHashedEmail: !!data.asset.user?.hashedEmail,
+            creatorName: data.asset.creatorName || "Not set",
+            rawUserData: data.asset.user,
+          });
+
+          // For private assets viewed by unauthenticated users
+          if (!auth.isAuthenticated && data.asset.visibility !== "public") {
+            setError(
+              "This asset is private and can only be viewed by the owner or authenticated users.",
+            );
+          }
+        } catch (fetchError) {
+          console.error("Error fetching asset:", fetchError);
+          // Add this to see the exact error message
+          console.error("Detailed error:", fetchError.toString());
+
+          // If fetch fails for unauthenticated users, show placeholder
+          if (!auth.isAuthenticated) {
+            setGuestPreviewMode(true);
+
+            // Create a simplified preview asset as a fallback
+            const previewAsset = {
+              uuid: id,
+              name: "Preview Asset",
+              type: "Asset Preview",
+              description:
+                "Log in to view full details and interact with this asset.",
+              imageUrl: "/placeholder/p01.png",
+              likes: 0,
+              visibility: "public",
+              createdAt: new Date().toISOString(),
+              creatorName: "Unknown Creator",
+              // Add an empty likedBy array to prevent undefined errors
+              likedBy: [],
+              // Add empty user object
+              user: {},
+            };
+
+            setAsset(previewAsset);
+          } else {
+            setError(fetchError.message || "Failed to load asset details");
+          }
         }
       } catch (err) {
-        console.error("Error fetching asset:", err);
-        setError(err.message || "Failed to load asset details");
+        console.error("Outer error fetching asset:", err);
+        setError(err.message || "An unexpected error occurred");
       } finally {
         setIsLoading(false);
       }
@@ -147,6 +222,7 @@ function AssetDetails() {
       collections={userCollections}
       isMyAsset={isMyAsset}
       isAuthenticated={auth.isAuthenticated}
+      isGuestPreview={guestPreviewMode} // New prop
       onBack={() => {
         // Check if there's a stored previous page in sessionStorage
         const previousPage = sessionStorage.getItem("previousPage");
@@ -161,5 +237,8 @@ function AssetDetails() {
     />
   );
 }
+
+// Mark page as not protected
+AssetDetails.protected = false;
 
 export default AssetDetails;

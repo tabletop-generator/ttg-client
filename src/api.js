@@ -237,17 +237,24 @@ export async function getUserAssets(user, hashedEmail, expand = true) {
 export async function getAssetByID(user, uuid) {
   console.log(`Fetching asset details for ID: ${uuid}`);
 
-  if (!user?.id_token) {
-    throw new Error("User authentication token is missing");
+  if (!uuid) {
+    throw new Error("Asset UUID is missing");
   }
 
   try {
+    // Create headers with or without authentication
+    const headers = {
+      "Content-Type": "application/json",
+    };
+
+    // Add authorization header only if user is authenticated
+    if (user?.id_token) {
+      headers.Authorization = `Bearer ${user.id_token}`;
+    }
+
     const response = await fetch(`${apiUrl}/v1/assets/${uuid}`, {
       method: "GET",
-      headers: {
-        Authorization: `Bearer ${user.id_token}`,
-        "Content-Type": "application/json",
-      },
+      headers,
     });
 
     const data = await response.json();
@@ -260,12 +267,21 @@ export async function getAssetByID(user, uuid) {
     }
 
     let creatorName = "Anonymous";
-    if (data.asset && data.asset.user && data.asset.user.hashedEmail) {
-      const response2 = await getUser(user, data.asset.user.hashedEmail);
-      if (response2 && response2.data && response2.data.user) {
-        creatorName = response2.data.user.displayName;
-      } else {
-        console.log("Cannot get Creator's name");
+    if (
+      data.asset &&
+      data.asset.user &&
+      data.asset.user.hashedEmail &&
+      user?.id_token
+    ) {
+      try {
+        const response2 = await getUser(user, data.asset.user.hashedEmail);
+        if (response2 && response2.data && response2.data.user) {
+          creatorName = response2.data.user.displayName;
+        } else {
+          console.log("Cannot get Creator's name");
+        }
+      } catch (error) {
+        console.log("Error fetching creator name:", error);
       }
     }
 
