@@ -41,12 +41,12 @@ function Home() {
     // Adjust for smaller screens
     if (height < 900) {
       // For very small screens
-      basePosition = 220;
-      collapsedPosition = 55;
-    } else if (height < 1081) {
+      basePosition = 300;
+      collapsedPosition = 200;
+    } else if (height < 1080) {
       // For 1080p screens
-      basePosition = 320;
-      collapsedPosition = 150;
+      basePosition = 180;
+      collapsedPosition = 100;
     }
 
     return showOptions ? basePosition : collapsedPosition;
