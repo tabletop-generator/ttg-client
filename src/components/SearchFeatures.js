@@ -1,4 +1,4 @@
-// src/components/SearchFeatures.js - Complete revised version
+// src/components/SearchFeatures.js
 import {
   Dropdown,
   DropdownButton,
@@ -9,15 +9,33 @@ import { ChevronDownIcon, ChevronUpIcon } from "@heroicons/react/24/outline";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { useSearch } from "./SearchBar";
 
-export default function SearchFeatures({ onFilterChange }) {
+export default function SearchFeatures({
+  onFilterChange,
+  onAdvancedOptionsToggle,
+}) {
   // State for filter selections
   const [sortOption, setSortOption] = useState("recent");
   const [timeOption, setTimeOption] = useState("all");
-  const [assetTypes, setAssetTypes] = useState({
-    character: false,
-    environment: false,
-    quest: false,
-    map: false,
+
+  // Load asset types from localStorage or default to all selected
+  const [assetTypes, setAssetTypes] = useState(() => {
+    if (typeof window !== "undefined") {
+      const saved = localStorage.getItem("ttg_assetTypes");
+      if (saved) {
+        try {
+          return JSON.parse(saved);
+        } catch (e) {
+          console.error("Failed to parse saved asset types:", e);
+        }
+      }
+    }
+    // Default to all types selected
+    return {
+      character: true,
+      environment: true,
+      quest: true,
+      map: true,
+    };
   });
 
   // State for advanced options visibility
@@ -44,6 +62,11 @@ export default function SearchFeatures({ onFilterChange }) {
         [type]: !prev[type],
       };
 
+      // Save to localStorage
+      if (typeof window !== "undefined") {
+        localStorage.setItem("ttg_assetTypes", JSON.stringify(newTypes));
+      }
+
       return newTypes;
     });
   }, []);
@@ -64,6 +87,13 @@ export default function SearchFeatures({ onFilterChange }) {
       onFilterChange(filters);
     }
   }, [filters, onFilterChange]); // Only re-run when filters or onFilterChange changes
+
+  // Notify parent component when advanced options visibility changes
+  useEffect(() => {
+    if (onAdvancedOptionsToggle) {
+      onAdvancedOptionsToggle(showAdvanced);
+    }
+  }, [showAdvanced, onAdvancedOptionsToggle]);
 
   return (
     <div className="w-full flex flex-col gap-4 py-2">

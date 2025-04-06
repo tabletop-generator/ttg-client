@@ -28,11 +28,14 @@ function Home() {
     },
   });
 
+  // Track advanced options visibility separately
+  const [showAdvancedOptions, setShowAdvancedOptions] = useState(false);
+
   // Debounce search query to avoid too many API calls
   useEffect(() => {
     const timer = setTimeout(() => {
       setDebouncedSearchQuery(searchQuery);
-    }, 300); // 300ms delay
+    }, 500); // Increased from 300ms to 500ms for better debouncing
 
     return () => clearTimeout(timer);
   }, [searchQuery]);
@@ -41,6 +44,11 @@ function Home() {
   const handleFilterChange = useCallback((filters) => {
     console.log("Filters changed:", filters);
     setSearchFilters(filters);
+  }, []);
+
+  // Callback for when advanced options visibility changes
+  const handleAdvancedOptionsToggle = useCallback((isVisible) => {
+    setShowAdvancedOptions(isVisible);
   }, []);
 
   // Create ref for handling escape key to close search
@@ -56,15 +64,14 @@ function Home() {
     return () => window.removeEventListener("keydown", handleEscKey);
   }, []);
 
-  // This effect adjusts the grid position based on search activity
+  // This effect adjusts the grid position based on advanced options visibility
   useEffect(() => {
-    // If there's an active search, bring the grid up to show more results
-    if (searchQuery || Object.values(searchFilters.assetTypes).some(Boolean)) {
-      setGridPosition(20);
+    if (showAdvancedOptions) {
+      setGridPosition(100); // Move grid down when advanced options are shown
     } else {
-      setGridPosition(100);
+      setGridPosition(20); // Move grid back up when advanced options are hidden
     }
-  }, [searchQuery, searchFilters]);
+  }, [showAdvancedOptions]);
 
   // When search is explicitly submitted (e.g., Enter key),
   // immediately use the current search term without debouncing
@@ -75,7 +82,6 @@ function Home() {
     }
   }, [searchSubmitted, searchQuery]);
 
-  // ONLY ONE RETURN STATEMENT - This was the issue!
   return (
     <SearchContext.Provider
       value={{
@@ -128,7 +134,10 @@ function Home() {
             <div className="w-full flex justify-center">
               <div className="w-full flex flex-col items-center space-y-4">
                 <SearchBar />
-                <SearchFeatures onFilterChange={handleFilterChange} />
+                <SearchFeatures
+                  onFilterChange={handleFilterChange}
+                  onAdvancedOptionsToggle={handleAdvancedOptionsToggle}
+                />
               </div>
             </div>
           </div>

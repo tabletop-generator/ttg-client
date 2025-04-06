@@ -1,5 +1,5 @@
 // /src/components/PinterestGrid.js
-import { getPublicAssets, searchAssets } from "@/api";
+import { searchAssets } from "@/api";
 import { useRouter } from "next/router";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useAuth } from "react-oidc-context";
@@ -13,10 +13,12 @@ export default function PinterestGrid({
   const [assets, setAssets] = useState([]);
   const [filteredAssets, setFilteredAssets] = useState([]);
   const [hasMore, setHasMore] = useState(true);
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(false); // Start with false to avoid unnecessary loading indicators
   const [error, setError] = useState(null);
   const [isSearchMode, setIsSearchMode] = useState(false);
+  const [isPendingSearch, setIsPendingSearch] = useState(false); // Track if a search is pending but not started
   const gridRef = useRef(null);
+  const searchTimerRef = useRef(null);
   const auth = useAuth();
   const router = useRouter();
 
@@ -44,14 +46,21 @@ export default function PinterestGrid({
     return columns * estimatedRows;
   };
 
-  // Function to perform the search via API
+  // Function to perform the search via API with improved loading state management
   const performSearch = useCallback(async () => {
-    if (
-      !stableSearchQuery &&
-      !Object.values(stableFilters.assetTypes).some(Boolean)
-    ) {
-      console.log("No search criteria - skipping API search");
+    // Check for active search criteria
+    const hasTextSearch = stableSearchQuery && stableSearchQuery.length >= 2;
+    const hasTypeFilters = Object.values(stableFilters.assetTypes).some(
+      Boolean,
+    );
+
+    // Cancel search if no valid search criteria
+    if (!hasTextSearch && !hasTypeFilters) {
+      console.log("Search criteria insufficient - skipping API search");
       setIsSearchMode(false);
+      setIsPendingSearch(false);
+      setAssets([]);
+      setFilteredAssets([]);
       return;
     }
 
@@ -60,7 +69,9 @@ export default function PinterestGrid({
       filters: stableFilters,
     });
 
+    // Set search mode
     setIsSearchMode(true);
+    setIsPendingSearch(false);
     setLoading(true);
     setError(null);
 
@@ -84,12 +95,22 @@ export default function PinterestGrid({
         }
       }
 
+      // Delay showing the loading indicator for very fast responses
+      const loadingTimer = setTimeout(() => {
+        if (isPendingSearch) {
+          setLoading(true);
+        }
+      }, 400);
+
       // Perform the search using the API
       console.log("Calling searchAssets with params:", searchParams);
       const result = await searchAssets(
         auth.isAuthenticated ? auth.user : null,
         searchParams,
       );
+
+      // Clear the loading timer
+      clearTimeout(loadingTimer);
 
       console.log("Search API returned:", result);
 
@@ -188,98 +209,56 @@ export default function PinterestGrid({
     }
   }, [stableSearchQuery, stableFilters, filteredAssets, isSearchMode]);
 
-  // Load assets from API on initial load
+  // Enhanced debounced search handling
   useEffect(() => {
-    // IMPORTANT: This is a critical change - clear any previous state when search changes
-    setAssets([]);
-    setFilteredAssets([]);
-
-    if (
-      stableSearchQuery ||
-      Object.values(stableFilters.assetTypes).some(Boolean)
-    ) {
-      // If search query or filters are active, use search mode
-      console.log("Search mode active - calling performSearch()");
-      performSearch();
-    } else {
-      // Otherwise load public assets normally
-      console.log("Regular mode - loading all public assets");
-      const fetchAssets = async () => {
-        try {
-          setLoading(true);
-          setIsSearchMode(false);
-          // Use auth user if authenticated, otherwise make unauthenticated request
-          const result = await getPublicAssets(
-            auth.isAuthenticated ? auth.user : null,
-          );
-
-          if (result?.assets && result.assets.length > 0) {
-            console.log("Loaded public assets:", result.assets.length);
-            setAssets(result.assets);
-            setFilteredAssets(result.assets);
-            setHasMore(false); // We're not implementing pagination for now
-          } else {
-            // If no assets found, use placeholder images
-            const placeholderCount = calculateInitialBatchSize();
-            console.log(
-              `No public assets found, using ${placeholderCount} placeholders`,
-            );
-
-            const placeholders = Array(placeholderCount)
-              .fill(null)
-              .map((_, index) => ({
-                id: `placeholder-${index + 1}-${Date.now()}`,
-                uuid: `placeholder-${index + 1}`,
-                name: "Sample Asset",
-                type:
-                  index % 4 === 0
-                    ? "character"
-                    : index % 4 === 1
-                      ? "quest"
-                      : index % 4 === 2
-                        ? "location"
-                        : "map",
-                imageUrl: `/placeholder/p0${(index % 4) + 1}.png`,
-                isPlaceholder: true,
-              }));
-
-            setAssets(placeholders);
-            setFilteredAssets(placeholders);
-            setHasMore(false);
-          }
-        } catch (error) {
-          console.error("Error fetching public assets:", error);
-
-          // Fall back to placeholders on error
-          const placeholderCount = calculateInitialBatchSize();
-          const placeholders = Array(placeholderCount)
-            .fill(null)
-            .map((_, index) => ({
-              id: `placeholder-${index + 1}-${Date.now()}`,
-              uuid: `placeholder-${index + 1}`,
-              name: "Sample Asset",
-              type:
-                index % 4 === 0
-                  ? "character"
-                  : index % 4 === 1
-                    ? "quest"
-                    : index % 4 === 2
-                      ? "location"
-                      : "map",
-              imageUrl: `/placeholder/p0${(index % 4) + 1}.png`,
-              isPlaceholder: true,
-            }));
-
-          setAssets(placeholders);
-          setFilteredAssets(placeholders);
-          setError("Failed to load assets from server");
-        } finally {
-          setLoading(false);
-        }
-      };
-
-      fetchAssets();
+    // Clear any existing timer
+    if (searchTimerRef.current) {
+      clearTimeout(searchTimerRef.current);
     }
+
+    // Set a flag indicating search is pending
+    setIsPendingSearch(true);
+
+    // Check if any search criteria are active
+    const anySearchCriteria =
+      stableSearchQuery ||
+      Object.values(stableFilters.assetTypes).some(Boolean);
+
+    // Only proceed with search if we have criteria
+    if (anySearchCriteria) {
+      // If search query or filters are active, use search mode with debounce
+      console.log("Search mode active - scheduling performSearch()");
+
+      // Only show loading state if the query is substantive
+      if (stableSearchQuery && stableSearchQuery.length >= 2) {
+        searchTimerRef.current = setTimeout(() => {
+          performSearch();
+        }, 500); // Increased debounce time for better UX
+      } else if (Object.values(stableFilters.assetTypes).some(Boolean)) {
+        // If only filters are active, search immediately
+        performSearch();
+      } else {
+        setIsPendingSearch(false);
+        // Clear results if no valid search criteria
+        setAssets([]);
+        setFilteredAssets([]);
+      }
+    } else {
+      // If no search criteria are active, show empty state
+      console.log("No search criteria active - showing empty state");
+      setIsPendingSearch(false);
+      setIsSearchMode(false);
+      setLoading(false);
+      setAssets([]);
+      setFilteredAssets([]);
+    }
+
+    // Cleanup function
+    return () => {
+      if (searchTimerRef.current) {
+        clearTimeout(searchTimerRef.current);
+      }
+    };
   }, [
     auth.isAuthenticated,
     auth.user,
@@ -308,7 +287,7 @@ export default function PinterestGrid({
   };
 
   // Different loading indicators for search mode vs initial load
-  if (loading) {
+  if (loading && filteredAssets.length === 0) {
     return (
       <div className="min-h-[50vh] flex flex-col items-center justify-center">
         <div className="w-16 h-16 border-4 border-indigo-600 border-t-transparent rounded-full animate-spin mb-4"></div>
@@ -332,41 +311,64 @@ export default function PinterestGrid({
         </div>
       )}
 
-      {/* Responsive grid for images */}
-      <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-5 gap-4">
-        {filteredAssets.map((asset) => (
-          <div
-            key={asset.id || asset.uuid}
-            className="relative overflow-hidden rounded-lg shadow-md cursor-pointer transform transition-transform hover:scale-105"
-            onClick={() => handleAssetClick(asset)}
-          >
-            {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img
-              src={asset.imageUrl || "/placeholder/p01.png"}
-              alt={asset.name || "Asset Image"}
-              className="h-full w-full object-cover aspect-square"
-              loading="eager"
-            />
-            <div className="absolute bottom-0 left-0 right-0 bg-black bg-opacity-60 p-2">
-              <p className="text-white text-sm truncate">
-                {asset.name || "Untitled"}
-              </p>
-              <p className="text-gray-300 text-xs capitalize">
-                {asset.type || "Asset"}
-              </p>
-              {asset.isPlaceholder && (
-                <p className="text-yellow-400 text-xs">(Placeholder)</p>
-              )}
-            </div>
-          </div>
-        ))}
-      </div>
+      {/* Loading indicator - now we won't show any indicator when updating existing results */}
+      {/* This keeps the original loading behavior but with our improved frequency logic */}
 
-      {filteredAssets.length === 0 && !loading && (
-        <div className="text-center text-gray-500 p-8">
-          {isSearchMode
-            ? "No assets found matching your search criteria. Try adjusting your filters."
-            : "No public assets found. Create and share assets to see them here!"}
+      {/* Responsive grid for images - only display if we have assets */}
+      {filteredAssets.length > 0 && (
+        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-5 gap-4">
+          {filteredAssets.map((asset) => (
+            <div
+              key={asset.id || asset.uuid}
+              className="relative overflow-hidden rounded-lg shadow-md cursor-pointer transform transition-transform hover:scale-105"
+              onClick={() => handleAssetClick(asset)}
+            >
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img
+                src={asset.imageUrl || "/placeholder/p01.png"}
+                alt={asset.name || "Asset Image"}
+                className="h-full w-full object-cover aspect-square"
+                loading="eager"
+              />
+              <div className="absolute bottom-0 left-0 right-0 bg-black bg-opacity-60 p-2">
+                <p className="text-white text-sm truncate">
+                  {asset.name || "Untitled"}
+                </p>
+                <p className="text-gray-300 text-xs capitalize">
+                  {asset.type || "Asset"}
+                </p>
+                {asset.isPlaceholder && (
+                  <p className="text-yellow-400 text-xs">(Placeholder)</p>
+                )}
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
+
+      {!loading && (
+        <div className="text-center p-8">
+          {filteredAssets.length === 0 && isSearchMode ? (
+            <p className="text-gray-500">
+              No assets found matching your search criteria. Try adjusting your
+              filters.
+            </p>
+          ) : filteredAssets.length === 0 && !isSearchMode ? (
+            <div className="py-8">
+              <div className="mb-6 font-mono text-3xl text-purple-400">
+                {/* ASCII art with proper escaping */}
+                <pre className="inline-block text-center whitespace-pre">
+                  {`(◕‿◕)`}
+                </pre>
+              </div>
+              <p className="text-xl text-gray-400 mb-4">
+                Ready to explore magical creations?
+              </p>
+              <p className="text-lg text-gray-500">
+                Enter a search term or select asset types above to begin!
+              </p>
+            </div>
+          ) : null}
         </div>
       )}
 
