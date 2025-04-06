@@ -1,4 +1,4 @@
-// src/components/SearchFeatures.js - Complete revised version
+// src/components/SearchFeatures.js
 import {
   Dropdown,
   DropdownButton,
@@ -9,22 +9,59 @@ import { ChevronDownIcon, ChevronUpIcon } from "@heroicons/react/24/outline";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { useSearch } from "./SearchBar";
 
-export default function SearchFeatures({ onFilterChange }) {
+export default function SearchFeatures({
+  onFilterChange,
+  onAdvancedOptionsToggle,
+}) {
   // State for filter selections
   const [sortOption, setSortOption] = useState("recent");
   const [timeOption, setTimeOption] = useState("all");
-  const [assetTypes, setAssetTypes] = useState({
-    character: false,
-    environment: false,
-    quest: false,
-    map: false,
+
+  // Load asset types from localStorage or default to all selected
+  const [assetTypes, setAssetTypes] = useState(() => {
+    if (typeof window !== "undefined") {
+      const saved = localStorage.getItem("ttg_assetTypes");
+      if (saved) {
+        try {
+          return JSON.parse(saved);
+        } catch (e) {
+          console.error("Failed to parse saved asset types:", e);
+        }
+      }
+    }
+    // Default to all types selected
+    return {
+      character: true,
+      environment: true,
+      quest: true,
+      map: true,
+    };
   });
 
   // State for advanced options visibility
   const [showAdvanced, setShowAdvanced] = useState(false);
+  // Store viewport height for responsive adjustments
+  const [viewportHeight, setViewportHeight] = useState(0);
+  // Track if we're on a small screen
+  const [isMobileView, setIsMobileView] = useState(false);
 
   // Get search context
   const { isSearchActive } = useSearch();
+
+  // Update viewport dimensions on resize
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+
+    const updateDimensions = () => {
+      setViewportHeight(window.innerHeight);
+      setIsMobileView(window.innerWidth < 640);
+    };
+
+    updateDimensions();
+    window.addEventListener("resize", updateDimensions);
+
+    return () => window.removeEventListener("resize", updateDimensions);
+  }, []);
 
   // Memoize the filters object to prevent recreation on every render
   const filters = useMemo(
@@ -44,6 +81,11 @@ export default function SearchFeatures({ onFilterChange }) {
         [type]: !prev[type],
       };
 
+      // Save to localStorage
+      if (typeof window !== "undefined") {
+        localStorage.setItem("ttg_assetTypes", JSON.stringify(newTypes));
+      }
+
       return newTypes;
     });
   }, []);
@@ -58,6 +100,15 @@ export default function SearchFeatures({ onFilterChange }) {
     setTimeOption(option);
   }, []);
 
+  // Toggle advanced options
+  const toggleAdvancedOptions = useCallback(() => {
+    const newState = !showAdvanced;
+    setShowAdvanced(newState);
+    if (onAdvancedOptionsToggle) {
+      onAdvancedOptionsToggle(newState);
+    }
+  }, [showAdvanced, onAdvancedOptionsToggle]);
+
   // Update parent component with filters when they change
   useEffect(() => {
     if (onFilterChange) {
@@ -65,12 +116,28 @@ export default function SearchFeatures({ onFilterChange }) {
     }
   }, [filters, onFilterChange]); // Only re-run when filters or onFilterChange changes
 
+  // Calculate spacing based on viewport height
+  const getResponsiveSpacing = () => {
+    if (viewportHeight < 700) {
+      return "py-1 gap-1 mt-3";
+    } else if (viewportHeight < 900) {
+      return "py-1 gap-2 mt-4";
+    } else {
+      return "py-2 gap-4 mt-5";
+    }
+  };
+
+  const responsiveSpacing = getResponsiveSpacing();
+
   return (
-    <div className="w-full flex flex-col gap-4 py-2">
+    <div className={`w-full flex flex-col ${responsiveSpacing}`}>
       {/* Always Visible - Asset Type Checkboxes - No background, cleaner UI */}
       <div className="flex justify-center">
         <div className="px-6 py-2 w-full max-w-3xl">
-          <div className="flex flex-wrap items-center justify-center gap-x-8 gap-y-2">
+          {/* Responsive checkbox layout - vertical on small screens, horizontal on larger */}
+          <div
+            className={`${isMobileView ? "flex flex-col items-center" : "flex flex-wrap items-center justify-center gap-x-8 gap-y-2"}`}
+          >
             {/* Checkboxes with more subtle styling */}
             {[
               { id: "character", label: "Character" },
@@ -78,7 +145,10 @@ export default function SearchFeatures({ onFilterChange }) {
               { id: "quest", label: "Quest" },
               { id: "map", label: "Map" },
             ].map((type) => (
-              <div key={type.id} className="flex items-center">
+              <div
+                key={type.id}
+                className={`flex ${isMobileView ? "mb-3 w-40 items-start" : "items-center"}`}
+              >
                 <input
                   id={`filter-${type.id}`}
                   type="checkbox"
@@ -101,7 +171,7 @@ export default function SearchFeatures({ onFilterChange }) {
       {/* Advanced Options Toggle Button - More subtle styling */}
       <div className="flex justify-center">
         <button
-          onClick={() => setShowAdvanced(!showAdvanced)}
+          onClick={toggleAdvancedOptions}
           className="flex items-center gap-2 text-gray-400 hover:text-white px-4 py-1 rounded-md text-sm transition-colors duration-200"
         >
           {showAdvanced ? (
