@@ -1,6 +1,6 @@
 // src/components/SearchBar.js
 import { MagnifyingGlassIcon } from "@heroicons/react/24/outline";
-import { createContext, useContext, useState } from "react";
+import { createContext, useContext, useEffect, useState } from "react";
 
 // Create a context for search state
 export const SearchContext = createContext({
@@ -25,6 +25,21 @@ export default function SearchBar() {
   } = useSearch();
 
   const [isFocused, setIsFocused] = useState(false);
+  const [viewportHeight, setViewportHeight] = useState(0);
+
+  // Monitor viewport height for responsive design
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+
+    const updateHeight = () => {
+      setViewportHeight(window.innerHeight);
+    };
+
+    updateHeight();
+    window.addEventListener("resize", updateHeight);
+
+    return () => window.removeEventListener("resize", updateHeight);
+  }, []);
 
   const handleInputChange = (e) => {
     setSearchTerm(e.target.value);
@@ -58,14 +73,37 @@ export default function SearchBar() {
     }
   };
 
+  // Get responsive styles based on viewport height
+  const getResponsiveStyles = () => {
+    let width = "80%";
+    let maxWidth = "40rem";
+    let padding = "p-3";
+
+    if (viewportHeight < 700) {
+      // For very small screens
+      width = "90%";
+      maxWidth = "36rem";
+      padding = "p-2";
+    } else if (viewportHeight < 900) {
+      // For medium screens (1080p)
+      width = "85%";
+      maxWidth = "38rem";
+      padding = "py-2 px-3";
+    }
+
+    return { width, maxWidth, padding };
+  };
+
+  const { width, maxWidth, padding } = getResponsiveStyles();
+
   return (
     <div
       className={`relative flex items-center rounded-md border ${
         isFocused ? "border-white bg-gray-900" : "border-gray-300 bg-gray-200"
       } transition-colors duration-200 z-20`}
       style={{
-        width: "80%", // Default width
-        maxWidth: "40rem", // Limit width on large screens
+        width: width, // Default width
+        maxWidth: maxWidth, // Limit width on large screens
       }}
     >
       <MagnifyingGlassIcon
@@ -79,7 +117,7 @@ export default function SearchBar() {
         onFocus={handleFocus}
         onBlur={handleBlur}
         onKeyDown={handleKeyDown}
-        className={`w-full p-3 bg-transparent outline-none placeholder-gray-500 ${
+        className={`w-full ${padding} bg-transparent outline-none placeholder-gray-500 ${
           isFocused ? "text-white" : "text-gray-900"
         }`}
       />

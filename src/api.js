@@ -1220,23 +1220,49 @@ export async function unlikeAsset(user, uuid) {
  ****************************************************************/
 export async function searchAssets(user, searchParams = {}) {
   try {
-    // Build the query string based on searchParams
-    const queryParams = new URLSearchParams();
+    // Check if there are multiple asset types selected
+    const hasMultipleTypes = searchParams.type && searchParams.type.length > 1;
+    const totalTypeCount = 4; // character, environment/location, quest, map
+    const hasAllTypes =
+      searchParams.type && searchParams.type.length === totalTypeCount;
 
-    // Text search (maps to 'name' field in API)
-    if (searchParams.query) {
-      // Add debug logs to see what's being sent
-      console.log("Adding search query to API params:", searchParams.query);
-      queryParams.append("name", searchParams.query);
+    // If all types are selected, don't use the type filter at all
+    if (hasAllTypes) {
+      console.log("All asset types selected - retrieving all assets");
+      return await fetchAssetsWithoutTypeFilter(user, searchParams);
     }
 
-    // Asset type filter - handle multiple types
-    if (searchParams.type && searchParams.type.length > 0) {
-      // API doesn't support multiple types in one request,
-      // so for now we'll either send the first type or handle multiple
-      // types on the client side
-      console.log("Adding asset type to API params:", searchParams.type[0]);
-      queryParams.append("type", searchParams.type[0]);
+    // If multiple types (but not all) are selected, make multiple requests
+    if (hasMultipleTypes) {
+      console.log(
+        "Multiple types selected - making separate requests for each",
+      );
+      return await fetchMultipleTypes(user, searchParams);
+    }
+
+    // For single type or no type, use the original logic
+    return await fetchSingleType(user, searchParams);
+  } catch (error) {
+    console.error("Error during searchAssets call:", error);
+    throw error;
+  }
+}
+
+/**
+ * Fetches assets without applying a type filter (for when all types are selected)
+ */
+async function fetchAssetsWithoutTypeFilter(user, searchParams) {
+  // Build a copy of search params without the type field
+  const { type, ...otherParams } = searchParams;
+
+  try {
+    // Build the query parameters
+    const queryParams = new URLSearchParams();
+
+    // Add text search if provided
+    if (otherParams.query) {
+      console.log("Adding search query to API params:", otherParams.query);
+      queryParams.append("name", otherParams.query);
     }
 
     // Always set visibility to public for search results
@@ -1259,7 +1285,7 @@ export async function searchAssets(user, searchParams = {}) {
     }
 
     if (isDebug) {
-      console.log("Search API Request:", {
+      console.log("Search API Request (all types):", {
         url,
         headers,
         searchParams,
@@ -1283,7 +1309,7 @@ export async function searchAssets(user, searchParams = {}) {
     const data = await response.json();
 
     if (isDebug) {
-      console.log("Search API response:", data);
+      console.log("Search API response (all types):", data);
     }
 
     // Return the assets from the API response
@@ -1292,7 +1318,134 @@ export async function searchAssets(user, searchParams = {}) {
       assets: data.assets || [],
     };
   } catch (error) {
-    console.error("Error during searchAssets call:", error);
+    console.error("Error fetching all assets:", error);
     throw error;
   }
+}
+
+/**
+ * Fetches assets for multiple selected types by making separate API calls
+ * and combining the results.
+ */
+async function fetchMultipleTypes(user, searchParams) {
+  try {
+    const allAssets = [];
+    const processedAssetIds = new Set(); // To prevent duplicates
+
+    // For each selected type, make a separate API call
+    for (const assetType of searchParams.type) {
+      // Clone the search params but with only one type
+      const singleTypeParams = {
+        ...searchParams,
+        type: [assetType],
+      };
+
+      // Make the API call for this specific type
+      console.log(`Fetching assets for type: ${assetType}`);
+      const result = await fetchSingleType(user, singleTypeParams);
+
+      // Add the results to our combined array (avoiding duplicates)
+      if (result && result.assets) {
+        for (const asset of result.assets) {
+          const assetId = asset.id || asset.uuid;
+          if (assetId && !processedAssetIds.has(assetId)) {
+            processedAssetIds.add(assetId);
+            allAssets.push(asset);
+          }
+        }
+      }
+    }
+
+    console.log(
+      `Combined ${allAssets.length} assets from multiple type requests`,
+    );
+
+    // Return the combined results
+    return {
+      status: "ok",
+      assets: allAssets,
+    };
+  } catch (error) {
+    console.error("Error fetching multiple types:", error);
+    throw error;
+  }
+}
+
+/**
+ * Fetches assets for a single type (original implementation)
+ */
+async function fetchSingleType(user, searchParams) {
+  // Build the query string based on searchParams
+  const queryParams = new URLSearchParams();
+
+  // Text search (maps to 'name' field in API)
+  if (searchParams.query) {
+    // Add debug logs to see what's being sent
+    console.log("Adding search query to API params:", searchParams.query);
+    queryParams.append("name", searchParams.query);
+  }
+
+  // Asset type filter - handle a single type
+  if (searchParams.type && searchParams.type.length > 0) {
+    // Get the single type and map it if necessary
+    const typeValue = searchParams.type[0];
+    // Map "environment" in UI to "location" for API
+    const apiType = typeValue === "environment" ? "location" : typeValue;
+
+    console.log("Adding asset type to API params:", apiType);
+    queryParams.append("type", apiType);
+  }
+
+  // Always set visibility to public for search results
+  queryParams.append("visibility", "public");
+
+  // Always expand results to get full asset details
+  queryParams.append("expand", "true");
+
+  // Construct the URL with query parameters
+  const url = `${apiUrl}/v1/assets?${queryParams.toString()}`;
+
+  // Create headers with or without authentication
+  const headers = {
+    "Content-Type": "application/json",
+  };
+
+  // Add auth token if user is provided and authenticated
+  if (user?.id_token) {
+    headers.Authorization = `Bearer ${user.id_token}`;
+  }
+
+  if (isDebug) {
+    console.log("Search API Request (single type):", {
+      url,
+      headers,
+      searchParams,
+    });
+  }
+
+  // Make the request
+  const response = await fetch(url, {
+    method: "GET",
+    headers,
+  });
+
+  if (!response.ok) {
+    const errorDetails = await response.text();
+    console.error(
+      `Search API call failed with status: ${response.status}, Details: ${errorDetails}`,
+    );
+    throw new Error(`API call failed with status: ${response.status}`);
+  }
+
+  const data = await response.json();
+
+  if (isDebug) {
+    console.log("Search API response:", data);
+  }
+
+  // Return the assets from the API response
+  return {
+    status: data.status,
+    assets: data.assets || [],
+  };
 }

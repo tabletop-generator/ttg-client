@@ -10,8 +10,9 @@ import SearchFeatures from "../components/SearchFeatures";
 function Home() {
   const auth = useAuth();
 
-  // Start with a 100px offset to make room for search features
+  // State for grid positioning based on screen height
   const [gridPosition, setGridPosition] = useState(100);
+  const [viewportHeight, setViewportHeight] = useState(0);
 
   // Use state for the search query and filters
   const [searchQuery, setSearchQuery] = useState("");
@@ -21,15 +22,56 @@ function Home() {
     sortBy: "recent",
     timePeriod: "all",
     assetTypes: {
-      character: false,
-      environment: false,
-      quest: false,
-      map: false,
+      character: true,
+      environment: true,
+      quest: true,
+      map: true,
     },
   });
 
   // Track advanced options visibility separately
   const [showAdvancedOptions, setShowAdvancedOptions] = useState(false);
+
+  // Calculate appropriate grid position based on viewport height
+  const calculateGridPosition = useCallback((height, showOptions) => {
+    // Base positions
+    let basePosition = 100;
+    let collapsedPosition = 20;
+
+    // Adjust for smaller screens
+    if (height < 900) {
+      // For very small screens
+      basePosition = 220;
+      collapsedPosition = 55;
+    } else if (height < 1081) {
+      // For 1080p screens
+      basePosition = 320;
+      collapsedPosition = 150;
+    }
+
+    return showOptions ? basePosition : collapsedPosition;
+  }, []);
+
+  // Track viewport height changes
+  useEffect(() => {
+    const handleResize = () => {
+      const vh = window.innerHeight;
+      setViewportHeight(vh);
+      setGridPosition(calculateGridPosition(vh, showAdvancedOptions));
+    };
+
+    // Initial calculation
+    if (typeof window !== "undefined") {
+      handleResize();
+      window.addEventListener("resize", handleResize);
+    }
+
+    return () => {
+      if (typeof window !== "undefined") {
+        window.removeEventListener("resize", handleResize);
+      }
+    };
+  }, [calculateGridPosition, showAdvancedOptions]);
 
   // Debounce search query to avoid too many API calls
   useEffect(() => {
@@ -47,9 +89,15 @@ function Home() {
   }, []);
 
   // Callback for when advanced options visibility changes
-  const handleAdvancedOptionsToggle = useCallback((isVisible) => {
-    setShowAdvancedOptions(isVisible);
-  }, []);
+  const handleAdvancedOptionsToggle = useCallback(
+    (isVisible) => {
+      setShowAdvancedOptions(isVisible);
+      if (typeof window !== "undefined") {
+        setGridPosition(calculateGridPosition(window.innerHeight, isVisible));
+      }
+    },
+    [calculateGridPosition],
+  );
 
   // Create ref for handling escape key to close search
   useEffect(() => {
@@ -64,15 +112,6 @@ function Home() {
     return () => window.removeEventListener("keydown", handleEscKey);
   }, []);
 
-  // This effect adjusts the grid position based on advanced options visibility
-  useEffect(() => {
-    if (showAdvancedOptions) {
-      setGridPosition(100); // Move grid down when advanced options are shown
-    } else {
-      setGridPosition(20); // Move grid back up when advanced options are hidden
-    }
-  }, [showAdvancedOptions]);
-
   // When search is explicitly submitted (e.g., Enter key),
   // immediately use the current search term without debouncing
   useEffect(() => {
@@ -81,6 +120,28 @@ function Home() {
       setDebouncedSearchQuery(searchQuery);
     }
   }, [searchSubmitted, searchQuery]);
+
+  // Get responsive class names based on viewport height
+  const getResponsiveClasses = () => {
+    if (viewportHeight < 700) {
+      return {
+        logoClass: "max-w-xs md:max-w-xs mb-4",
+        spacingClass: "pt-[10vh]",
+      };
+    } else if (viewportHeight < 900) {
+      return {
+        logoClass: "max-w-xs md:max-w-sm mb-6",
+        spacingClass: "pt-[12vh]",
+      };
+    } else {
+      return {
+        logoClass: "max-w-xs md:max-w-md mb-8",
+        spacingClass: "pt-[15vh]",
+      };
+    }
+  };
+
+  const { logoClass, spacingClass } = getResponsiveClasses();
 
   return (
     <SearchContext.Provider
@@ -121,13 +182,15 @@ function Home() {
 
         {/* Search UI - Top layer with proper stacking context */}
         <div className="absolute top-0 left-0 w-full z-20">
-          <div className="relative px-8 flex flex-col items-center pt-[15vh] pb-4">
-            {/* Logo */}
+          <div
+            className={`relative px-8 flex flex-col items-center ${spacingClass} pb-4`}
+          >
+            {/* Logo with responsive sizing - removed tagline */}
             {/* eslint-disable-next-line @next/next/no-img-element */}
             <img
               src="/logo_hero.png"
               alt="TTG logo"
-              className="w-auto h-auto max-w-xs md:max-w-md mb-8"
+              className={`w-auto h-auto ${logoClass}`}
             />
 
             {/* Search Components */}
