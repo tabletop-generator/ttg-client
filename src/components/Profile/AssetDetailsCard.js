@@ -27,12 +27,14 @@ export default function AssetDetailsCard({
   setUserCollections,
   onBack,
   isMyAsset,
-  isAuthenticated = true, // Default to true for backward compatibility
+  isAuthenticated = true,
+  isGuestPreview = false, // guest preview mode
 }) {
   const auth = useAuth();
   const router = useRouter();
   const cognitoUser = auth.user;
   const [userColl, setUserColl] = useState([]);
+  const [showGuestBanner, setShowGuestBanner] = useState(true);
 
   // Core asset states
   const [visibility, setVisibility] = useState(asset?.visibility || "private");
@@ -153,6 +155,47 @@ export default function AssetDetailsCard({
       }
     })();
   }, [asset, isAuthenticated, userColl]);
+
+  const handleDismissGuestBanner = () => {
+    setShowGuestBanner(false);
+
+    // Save the dismissal time to localStorage
+    if (typeof window !== "undefined") {
+      localStorage.setItem("guestBannerDismissed", Date.now().toString());
+    }
+  };
+
+  // Check localStorage on component mount to decide if banner should be shown
+  useEffect(() => {
+    if (typeof window !== "undefined" && isGuestPreview) {
+      const lastDismissed = localStorage.getItem("guestBannerDismissed");
+
+      if (lastDismissed) {
+        const dismissedTime = parseInt(lastDismissed, 10);
+        const fourHoursInMs = 4 * 60 * 60 * 1000; // 4 hours in milliseconds
+
+        // Only show banner if it's been at least 4 hours since last dismissal
+        if (Date.now() - dismissedTime < fourHoursInMs) {
+          setShowGuestBanner(false);
+        }
+      }
+    }
+  }, [isGuestPreview]);
+
+  useEffect(() => {
+    if (!isAuthenticated && typeof window !== "undefined") {
+      const lastDismissed = localStorage.getItem("loginPromptDismissed");
+
+      if (lastDismissed) {
+        const dismissedTime = parseInt(lastDismissed, 10);
+        const fourHoursInMs = 4 * 60 * 60 * 1000;
+
+        if (Date.now() - dismissedTime < fourHoursInMs) {
+          setLoginPromptVisible(false);
+        }
+      }
+    }
+  }, [isAuthenticated]);
 
   // ---- HANDLERS ----
   const handleShare = () => {
@@ -458,8 +501,33 @@ export default function AssetDetailsCard({
           className="w-full rounded-lg mb-6"
         />
 
+        {/* Enhanced Guest Preview Mode Banner - Only show if not dismissed */}
+        {isGuestPreview && showGuestBanner && (
+          <div className="bg-gradient-to-r from-indigo-600 to-purple-600 text-white p-4 rounded-lg mb-4">
+            <p className="font-bold text-xl mb-2">Guest Preview Mode</p>
+            <p className="mb-3">
+              You are viewing this asset in limited preview mode. Log in to see
+              full details, like assets, add to collections, and more!
+            </p>
+            <div className="flex justify-between items-center">
+              <button
+                onClick={() => auth.signinRedirect()}
+                className="px-4 py-2 bg-white text-indigo-600 rounded-md hover:bg-gray-100 font-bold"
+              >
+                Sign In
+              </button>
+              <button
+                onClick={handleDismissGuestBanner}
+                className="text-white underline"
+              >
+                Continue as guest
+              </button>
+            </div>
+          </div>
+        )}
+
         {/* Login prompt for unauthenticated users */}
-        {loginPromptVisible && !isAuthenticated && (
+        {!isGuestPreview && loginPromptVisible && !isAuthenticated && (
           <div className="bg-indigo-600 text-white p-4 rounded-lg mb-4">
             <p className="font-bold">Want full interaction with this asset?</p>
             <p className="text-sm mb-2">
@@ -473,7 +541,13 @@ export default function AssetDetailsCard({
                 Log In
               </button>
               <button
-                onClick={() => setLoginPromptVisible(false)}
+                onClick={() => {
+                  setLoginPromptVisible(false);
+                  localStorage.setItem(
+                    "loginPromptDismissed",
+                    Date.now().toString(),
+                  );
+                }}
                 className="text-white underline"
               >
                 Continue as guest
@@ -510,10 +584,10 @@ export default function AssetDetailsCard({
               href={`/profile/user/${asset.user.hashedEmail}`}
               className="text-indigo-400 hover:text-indigo-300"
             >
-              {asset.creatorName}
+              {asset.creatorName || "Unknown Creator"}
             </Link>
           ) : (
-            asset.creatorName
+            asset.creatorName || "Unknown Creator"
           )}
         </p>
         <p className="text-gray-400 mb-2 capitalize">
