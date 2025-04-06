@@ -1,7 +1,7 @@
-// PinterestGrid.js - Complete revised version
-import { getPublicAssets } from "@/api";
+// /src/components/PinterestGrid.js
+import { searchAssets } from "@/api";
 import { useRouter } from "next/router";
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useAuth } from "react-oidc-context";
 
 export default function PinterestGrid({
@@ -13,10 +13,12 @@ export default function PinterestGrid({
   const [assets, setAssets] = useState([]);
   const [filteredAssets, setFilteredAssets] = useState([]);
   const [hasMore, setHasMore] = useState(true);
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(false); // Start with false to avoid unnecessary loading indicators
   const [error, setError] = useState(null);
-  const [initialLoad, setInitialLoad] = useState(true);
+  const [isSearchMode, setIsSearchMode] = useState(false);
+  const [isPendingSearch, setIsPendingSearch] = useState(false); // Track if a search is pending but not started
   const gridRef = useRef(null);
+  const searchTimerRef = useRef(null);
   const auth = useAuth();
   const router = useRouter();
 
@@ -44,183 +46,226 @@ export default function PinterestGrid({
     return columns * estimatedRows;
   };
 
-  // Load assets from API on initial load
-  useEffect(() => {
-    if (!initialLoad) return;
+  // Function to perform the search via API with improved loading state management
+  const performSearch = useCallback(async () => {
+    // Check for active search criteria
+    const hasTextSearch = stableSearchQuery && stableSearchQuery.length >= 2;
+    const hasTypeFilters = Object.values(stableFilters.assetTypes).some(
+      Boolean,
+    );
 
-    const fetchAssets = async () => {
-      try {
-        setLoading(true);
-        // Use auth user if authenticated, otherwise make unauthenticated request
-        const result = await getPublicAssets(
-          auth.isAuthenticated ? auth.user : null,
-        );
+    // Cancel search if no valid search criteria
+    if (!hasTextSearch && !hasTypeFilters) {
+      console.log("Search criteria insufficient - skipping API search");
+      setIsSearchMode(false);
+      setIsPendingSearch(false);
+      setAssets([]);
+      setFilteredAssets([]);
+      return;
+    }
 
-        if (result?.assets && result.assets.length > 0) {
-          console.log("Loaded public assets:", result.assets.length);
-          setAssets(result.assets);
-          setFilteredAssets(result.assets);
-          setHasMore(false); // We're not implementing pagination for now
-        } else {
-          // If no assets found, use placeholder images
-          const placeholderCount = calculateInitialBatchSize();
-          console.log(
-            `No public assets found, using ${placeholderCount} placeholders`,
-          );
-
-          const placeholders = Array(placeholderCount)
-            .fill(null)
-            .map((_, index) => ({
-              id: `placeholder-${index + 1}-${Date.now()}`,
-              uuid: `placeholder-${index + 1}`,
-              name: "Sample Asset",
-              type:
-                index % 4 === 0
-                  ? "character"
-                  : index % 4 === 1
-                    ? "quest"
-                    : index % 4 === 2
-                      ? "location"
-                      : "map",
-              imageUrl: `/placeholder/p0${(index % 4) + 1}.png`,
-              isPlaceholder: true,
-            }));
-
-          setAssets(placeholders);
-          setFilteredAssets(placeholders);
-          setHasMore(false);
-        }
-      } catch (error) {
-        console.error("Error fetching public assets:", error);
-
-        // Fall back to placeholders on error
-        const placeholderCount = calculateInitialBatchSize();
-        const placeholders = Array(placeholderCount)
-          .fill(null)
-          .map((_, index) => ({
-            id: `placeholder-${index + 1}-${Date.now()}`,
-            uuid: `placeholder-${index + 1}`,
-            name: "Sample Asset",
-            type:
-              index % 4 === 0
-                ? "character"
-                : index % 4 === 1
-                  ? "quest"
-                  : index % 4 === 2
-                    ? "location"
-                    : "map",
-            imageUrl: `/placeholder/p0${(index % 4) + 1}.png`,
-            isPlaceholder: true,
-          }));
-
-        setAssets(placeholders);
-        setFilteredAssets(placeholders);
-        setError("Failed to load assets from server");
-      } finally {
-        setLoading(false);
-        setInitialLoad(false);
-      }
-    };
-
-    fetchAssets();
-  }, [initialLoad, auth.isAuthenticated, auth.user]);
-
-  // Apply search query and filters when they change
-  useEffect(() => {
-    // Skip processing if no assets
-    if (assets.length === 0) return;
-
-    console.log("Filtering assets with:", {
-      searchQuery: stableSearchQuery,
+    console.log("Performing API search:", {
+      query: stableSearchQuery,
       filters: stableFilters,
     });
 
-    // Create a new filtered array - don't modify existing state directly
-    let results = [...assets];
+    // Set search mode
+    setIsSearchMode(true);
+    setIsPendingSearch(false);
+    setLoading(true);
+    setError(null);
 
-    // Apply search query filter
-    if (stableSearchQuery?.trim()) {
-      const query = stableSearchQuery.toLowerCase().trim();
-      results = results.filter(
-        (asset) =>
-          asset.name?.toLowerCase().includes(query) ||
-          asset.type?.toLowerCase().includes(query) ||
-          asset.description?.toLowerCase().includes(query),
+    try {
+      // Build search parameters object
+      const searchParams = {
+        query: stableSearchQuery,
+      };
+
+      // Add type filters (map from our UI types to API types)
+      if (stableFilters.assetTypes) {
+        const selectedTypes = Object.entries(stableFilters.assetTypes)
+          .filter(([_, selected]) => selected)
+          .map(([type]) => {
+            // Map "environment" in UI to "location" for API
+            return type === "environment" ? "location" : type;
+          });
+
+        if (selectedTypes.length > 0) {
+          searchParams.type = selectedTypes;
+        }
+      }
+
+      // Delay showing the loading indicator for very fast responses
+      const loadingTimer = setTimeout(() => {
+        if (isPendingSearch) {
+          setLoading(true);
+        }
+      }, 400);
+
+      // Perform the search using the API
+      console.log("Calling searchAssets with params:", searchParams);
+      const result = await searchAssets(
+        auth.isAuthenticated ? auth.user : null,
+        searchParams,
       );
-    }
 
-    // Apply asset type filters
-    if (stableFilters.assetTypes) {
-      const selectedTypes = Object.entries(stableFilters.assetTypes)
-        .filter(([_, selected]) => selected)
-        .map(([type]) => type);
+      // Clear the loading timer
+      clearTimeout(loadingTimer);
 
-      if (selectedTypes.length > 0) {
-        results = results.filter(
-          (asset) =>
-            // Handle "environment" type in our filter but "location" in the backend
-            selectedTypes.includes(asset.type) ||
-            (asset.type === "location" &&
-              selectedTypes.includes("environment")),
-        );
+      console.log("Search API returned:", result);
+
+      if (result?.assets) {
+        console.log(`Search returned ${result.assets.length} assets`);
+
+        // IMPORTANT: Always use the search results directly, don't filter the original assets
+        let searchResults = [...result.assets];
+
+        // Apply client-side filters that the API doesn't support
+
+        // Apply sort filter
+        if (stableFilters.sortBy) {
+          switch (stableFilters.sortBy) {
+            case "recent":
+              searchResults.sort(
+                (a, b) =>
+                  new Date(b.createdAt || 0) - new Date(a.createdAt || 0),
+              );
+              break;
+            case "oldest":
+              searchResults.sort(
+                (a, b) =>
+                  new Date(a.createdAt || 0) - new Date(b.createdAt || 0),
+              );
+              break;
+            case "name_asc":
+              searchResults.sort((a, b) =>
+                (a.name || "").localeCompare(b.name || ""),
+              );
+              break;
+            case "name_desc":
+              searchResults.sort((a, b) =>
+                (b.name || "").localeCompare(a.name || ""),
+              );
+              break;
+          }
+        }
+
+        // Apply time period filter
+        if (stableFilters.timePeriod && stableFilters.timePeriod !== "all") {
+          const now = new Date();
+          let cutoffDate;
+
+          switch (stableFilters.timePeriod) {
+            case "week":
+              cutoffDate = new Date(now.setDate(now.getDate() - 7));
+              break;
+            case "month":
+              cutoffDate = new Date(now.setMonth(now.getMonth() - 1));
+              break;
+            case "year":
+              cutoffDate = new Date(now.setFullYear(now.getFullYear() - 1));
+              break;
+          }
+
+          if (cutoffDate) {
+            searchResults = searchResults.filter((asset) => {
+              const assetDate = new Date(asset.createdAt || 0);
+              return assetDate >= cutoffDate;
+            });
+          }
+        }
+
+        console.log("Final filtered search results:", searchResults.length);
+
+        // CRITICAL FIX: Set both assets and filteredAssets to the search results
+        setAssets(searchResults);
+        setFilteredAssets(searchResults);
+      } else {
+        console.log("No search results found");
+        setAssets([]);
+        setFilteredAssets([]);
       }
+    } catch (error) {
+      console.error("Error performing search:", error);
+      setError("Failed to load search results. Please try again.");
+      // Clear results on error
+      setAssets([]);
+      setFilteredAssets([]);
+    } finally {
+      setLoading(false);
+    }
+  }, [stableSearchQuery, stableFilters, auth.isAuthenticated, auth.user]);
+
+  useEffect(() => {
+    // Debug logging
+    if (stableSearchQuery) {
+      console.log("Search active:", {
+        query: stableSearchQuery,
+        filters: stableFilters,
+        resultCount: filteredAssets.length,
+        isSearchMode,
+        assets: filteredAssets,
+      });
+    }
+  }, [stableSearchQuery, stableFilters, filteredAssets, isSearchMode]);
+
+  // Enhanced debounced search handling
+  useEffect(() => {
+    // Clear any existing timer
+    if (searchTimerRef.current) {
+      clearTimeout(searchTimerRef.current);
     }
 
-    // Apply sort filter
-    if (stableFilters.sortBy) {
-      switch (stableFilters.sortBy) {
-        case "recent":
-          results.sort(
-            (a, b) => new Date(b.createdAt || 0) - new Date(a.createdAt || 0),
-          );
-          break;
-        case "oldest":
-          results.sort(
-            (a, b) => new Date(a.createdAt || 0) - new Date(b.createdAt || 0),
-          );
-          break;
-        case "name_asc":
-          results.sort((a, b) => (a.name || "").localeCompare(b.name || ""));
-          break;
-        case "name_desc":
-          results.sort((a, b) => (b.name || "").localeCompare(a.name || ""));
-          break;
+    // Set a flag indicating search is pending
+    setIsPendingSearch(true);
+
+    // Check if any search criteria are active
+    const anySearchCriteria =
+      stableSearchQuery ||
+      Object.values(stableFilters.assetTypes).some(Boolean);
+
+    // Only proceed with search if we have criteria
+    if (anySearchCriteria) {
+      // If search query or filters are active, use search mode with debounce
+      console.log("Search mode active - scheduling performSearch()");
+
+      // Only show loading state if the query is substantive
+      if (stableSearchQuery && stableSearchQuery.length >= 2) {
+        searchTimerRef.current = setTimeout(() => {
+          performSearch();
+        }, 500); // Increased debounce time for better UX
+      } else if (Object.values(stableFilters.assetTypes).some(Boolean)) {
+        // If only filters are active, search immediately
+        performSearch();
+      } else {
+        setIsPendingSearch(false);
+        // Clear results if no valid search criteria
+        setAssets([]);
+        setFilteredAssets([]);
       }
+    } else {
+      // If no search criteria are active, show empty state
+      console.log("No search criteria active - showing empty state");
+      setIsPendingSearch(false);
+      setIsSearchMode(false);
+      setLoading(false);
+      setAssets([]);
+      setFilteredAssets([]);
     }
 
-    // Apply time period filter
-    if (stableFilters.timePeriod && stableFilters.timePeriod !== "all") {
-      const now = new Date();
-      let cutoffDate;
-
-      switch (stableFilters.timePeriod) {
-        case "week":
-          cutoffDate = new Date(now.setDate(now.getDate() - 7));
-          break;
-        case "month":
-          cutoffDate = new Date(now.setMonth(now.getMonth() - 1));
-          break;
-        case "year":
-          cutoffDate = new Date(now.setFullYear(now.getFullYear() - 1));
-          break;
+    // Cleanup function
+    return () => {
+      if (searchTimerRef.current) {
+        clearTimeout(searchTimerRef.current);
       }
-
-      if (cutoffDate) {
-        results = results.filter((asset) => {
-          // Skip filtering placeholder assets
-          if (asset.isPlaceholder) return true;
-
-          const assetDate = new Date(asset.createdAt || 0);
-          return assetDate >= cutoffDate;
-        });
-      }
-    }
-
-    // Only update state if the filtered results are actually different
-    if (JSON.stringify(results) !== JSON.stringify(filteredAssets)) {
-      setFilteredAssets(results);
-    }
-  }, [assets, stableSearchQuery, stableFilters, filteredAssets]);
+    };
+  }, [
+    auth.isAuthenticated,
+    auth.user,
+    performSearch,
+    stableSearchQuery,
+    stableFilters,
+  ]);
 
   // Handle click on an asset
   const handleAssetClick = (asset) => {
@@ -241,9 +286,15 @@ export default function PinterestGrid({
     router.push(`/discover/${asset.uuid}`);
   };
 
-  if (loading) {
+  // Different loading indicators for search mode vs initial load
+  if (loading && filteredAssets.length === 0) {
     return (
-      <div className="text-center text-gray-400 p-8">Loading assets...</div>
+      <div className="min-h-[50vh] flex flex-col items-center justify-center">
+        <div className="w-16 h-16 border-4 border-indigo-600 border-t-transparent rounded-full animate-spin mb-4"></div>
+        <p className="text-center text-gray-400">
+          {isSearchMode ? "Searching for assets..." : "Loading assets..."}
+        </p>
+      </div>
     );
   }
 
@@ -260,41 +311,64 @@ export default function PinterestGrid({
         </div>
       )}
 
-      {/* Responsive grid for images */}
-      <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-5 gap-4">
-        {filteredAssets.map((asset) => (
-          <div
-            key={asset.id || asset.uuid}
-            className="relative overflow-hidden rounded-lg shadow-md cursor-pointer transform transition-transform hover:scale-105"
-            onClick={() => handleAssetClick(asset)}
-          >
-            {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img
-              src={asset.imageUrl || "/placeholder/p01.png"}
-              alt={asset.name || "Asset Image"}
-              className="h-full w-full object-cover aspect-square"
-              loading="eager"
-            />
-            <div className="absolute bottom-0 left-0 right-0 bg-black bg-opacity-60 p-2">
-              <p className="text-white text-sm truncate">
-                {asset.name || "Untitled"}
-              </p>
-              <p className="text-gray-300 text-xs capitalize">
-                {asset.type || "Asset"}
-              </p>
-              {asset.isPlaceholder && (
-                <p className="text-yellow-400 text-xs">(Placeholder)</p>
-              )}
-            </div>
-          </div>
-        ))}
-      </div>
+      {/* Loading indicator - now we won't show any indicator when updating existing results */}
+      {/* This keeps the original loading behavior but with our improved frequency logic */}
 
-      {filteredAssets.length === 0 && !loading && (
-        <div className="text-center text-gray-500 p-8">
-          {searchQuery
-            ? "No assets found matching your search criteria. Try adjusting your filters."
-            : "No public assets found. Create and share assets to see them here!"}
+      {/* Responsive grid for images - only display if we have assets */}
+      {filteredAssets.length > 0 && (
+        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-5 gap-4">
+          {filteredAssets.map((asset) => (
+            <div
+              key={asset.id || asset.uuid}
+              className="relative overflow-hidden rounded-lg shadow-md cursor-pointer transform transition-transform hover:scale-105"
+              onClick={() => handleAssetClick(asset)}
+            >
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img
+                src={asset.imageUrl || "/placeholder/p01.png"}
+                alt={asset.name || "Asset Image"}
+                className="h-full w-full object-cover aspect-square"
+                loading="eager"
+              />
+              <div className="absolute bottom-0 left-0 right-0 bg-black bg-opacity-60 p-2">
+                <p className="text-white text-sm truncate">
+                  {asset.name || "Untitled"}
+                </p>
+                <p className="text-gray-300 text-xs capitalize">
+                  {asset.type || "Asset"}
+                </p>
+                {asset.isPlaceholder && (
+                  <p className="text-yellow-400 text-xs">(Placeholder)</p>
+                )}
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
+
+      {!loading && (
+        <div className="text-center p-8">
+          {filteredAssets.length === 0 && isSearchMode ? (
+            <p className="text-gray-500">
+              No assets found matching your search criteria. Try adjusting your
+              filters.
+            </p>
+          ) : filteredAssets.length === 0 && !isSearchMode ? (
+            <div className="py-8">
+              <div className="mb-6 font-mono text-3xl text-purple-400">
+                {/* ASCII art with proper escaping */}
+                <pre className="inline-block text-center whitespace-pre">
+                  {`(◕‿◕)`}
+                </pre>
+              </div>
+              <p className="text-xl text-gray-400 mb-4">
+                Ready to explore magical creations?
+              </p>
+              <p className="text-lg text-gray-500">
+                Enter a search term or select asset types above to begin!
+              </p>
+            </div>
+          ) : null}
         </div>
       )}
 
