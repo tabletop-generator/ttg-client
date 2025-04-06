@@ -10,8 +10,13 @@ export default function CommentsSection({ user, cognitoUser, asset }) {
   const auth = useAuth();
   const router = useRouter();
 
-  // Using to send one obj for user info (token and hashed, token cognito, hashed prisma)
-  const combinedUser = { ...user, id_token: cognitoUser.id_token };
+  // Check if user is authenticated
+  const isAuthenticated = !!cognitoUser?.id_token;
+
+  // Using to send one obj for user info - make it conditional to prevent errors
+  const combinedUser = isAuthenticated
+    ? { ...user, id_token: cognitoUser?.id_token }
+    : null;
 
   // State for toggling comment section, comment text, and storing comments
   const [isOpen, setIsOpen] = useState(false);
@@ -57,7 +62,21 @@ export default function CommentsSection({ user, cognitoUser, asset }) {
   // Handle posting a new comment
   const handlePost = async () => {
     if (!commentText.trim()) return; // ignore empty input
+
+    // Check authentication before posting
+    if (!isAuthenticated) {
+      const confirmLogin = window.confirm(
+        "You need to be logged in to post comments. Would you like to log in now?",
+      );
+
+      if (confirmLogin) {
+        auth.signinRedirect();
+      }
+      return;
+    }
+
     try {
+      // Only proceed if authenticated and combinedUser exists
       const assetId = asset?.uuid || asset?.id;
       const response = await postComments(combinedUser, assetId, commentText);
       if (response && response.status === 201) {
@@ -86,6 +105,9 @@ export default function CommentsSection({ user, cognitoUser, asset }) {
 
   // Save the edited comment by calling the editComment API
   const saveEditedComment = async (commentId) => {
+    // Only proceed if user is authenticated
+    if (!isAuthenticated || !combinedUser) return;
+
     try {
       const response = await editComment(combinedUser, commentId, editingText);
       if ((response && response.status === 200) || response.status === "ok") {
@@ -101,6 +123,9 @@ export default function CommentsSection({ user, cognitoUser, asset }) {
 
   // Delete a comment (available if the comment is yours or the asset is yours)
   const handleDeleteComment = async (commentId) => {
+    // Only proceed if user is authenticated
+    if (!isAuthenticated || !combinedUser) return;
+
     try {
       const response = await deleteComment(combinedUser, commentId);
       if (response && response.status === "ok") {
@@ -130,22 +155,34 @@ export default function CommentsSection({ user, cognitoUser, asset }) {
 
       {isOpen && (
         <div className="mt-4 bg-gray-900 p-4 rounded-lg">
-          {/* Comment Input Section */}
-          <div className="flex items-center gap-2 mb-4">
-            <input
-              type="text"
-              value={commentText}
-              onChange={(e) => setCommentText(e.target.value)}
-              className="flex-grow p-2 text-black rounded-md"
-              placeholder="Add a comment..."
-            />
-            <button
-              onClick={handlePost}
-              className="px-4 py-2 bg-blue-600 text-white rounded-md"
-            >
-              Post
-            </button>
-          </div>
+          {/* Show login prompt or comment input based on authentication */}
+          {isAuthenticated ? (
+            <div className="flex items-center gap-2 mb-4">
+              <input
+                type="text"
+                value={commentText}
+                onChange={(e) => setCommentText(e.target.value)}
+                className="flex-grow p-2 text-black rounded-md"
+                placeholder="Add a comment..."
+              />
+              <button
+                onClick={handlePost}
+                className="px-4 py-2 bg-blue-600 text-white rounded-md"
+              >
+                Post
+              </button>
+            </div>
+          ) : (
+            <div className="bg-indigo-600 text-white p-3 rounded-md mb-4">
+              <p className="font-bold">Want to join the conversation?</p>
+              <button
+                onClick={() => auth.signinRedirect()}
+                className="mt-2 px-3 py-1 bg-white text-indigo-600 rounded-md"
+              >
+                Log in to comment
+              </button>
+            </div>
+          )}
 
           {/* Comments Display */}
           <div className="space-y-3">
