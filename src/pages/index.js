@@ -1,4 +1,4 @@
-// pages/index.js - Complete revised version
+// pages/index.js
 import { useCallback, useEffect, useState } from "react";
 import { useAuth } from "react-oidc-context";
 import GradientOverlay from "../components/GradientTransitionLarge";
@@ -13,7 +13,10 @@ function Home() {
   // Start with a 100px offset to make room for search features
   const [gridPosition, setGridPosition] = useState(100);
 
-  // Use useCallback for the filter change handler to prevent recreating it on every render
+  // Use state for the search query and filters
+  const [searchQuery, setSearchQuery] = useState("");
+  const [debouncedSearchQuery, setDebouncedSearchQuery] = useState("");
+  const [searchSubmitted, setSearchSubmitted] = useState(false);
   const [searchFilters, setSearchFilters] = useState({
     sortBy: "recent",
     timePeriod: "all",
@@ -25,7 +28,14 @@ function Home() {
     },
   });
 
-  const [searchQuery, setSearchQuery] = useState("");
+  // Debounce search query to avoid too many API calls
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setDebouncedSearchQuery(searchQuery);
+    }, 300); // 300ms delay
+
+    return () => clearTimeout(timer);
+  }, [searchQuery]);
 
   // Handle search filter changes with useCallback to prevent infinite loops
   const handleFilterChange = useCallback((filters) => {
@@ -46,6 +56,26 @@ function Home() {
     return () => window.removeEventListener("keydown", handleEscKey);
   }, []);
 
+  // This effect adjusts the grid position based on search activity
+  useEffect(() => {
+    // If there's an active search, bring the grid up to show more results
+    if (searchQuery || Object.values(searchFilters.assetTypes).some(Boolean)) {
+      setGridPosition(20);
+    } else {
+      setGridPosition(100);
+    }
+  }, [searchQuery, searchFilters]);
+
+  // When search is explicitly submitted (e.g., Enter key),
+  // immediately use the current search term without debouncing
+  useEffect(() => {
+    if (searchSubmitted) {
+      console.log("Search explicitly submitted with query:", searchQuery);
+      setDebouncedSearchQuery(searchQuery);
+    }
+  }, [searchSubmitted, searchQuery]);
+
+  // ONLY ONE RETURN STATEMENT - This was the issue!
   return (
     <SearchContext.Provider
       value={{
@@ -55,6 +85,8 @@ function Home() {
         },
         searchTerm: searchQuery,
         setSearchTerm: setSearchQuery,
+        searchSubmitted: searchSubmitted,
+        triggerSearch: () => setSearchSubmitted((prev) => !prev),
       }}
     >
       <div className="relative isolate">
@@ -75,7 +107,7 @@ function Home() {
           }}
         >
           <PinterestGrid
-            searchQuery={searchQuery}
+            searchQuery={debouncedSearchQuery}
             filters={searchFilters}
             isAuthenticated={auth.isAuthenticated}
           />

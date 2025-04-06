@@ -1202,3 +1202,97 @@ export async function unlikeAsset(user, uuid) {
     throw error;
   }
 }
+
+/****************************************************************
+ * Function: searchAssets
+ * Description: Sends a GET request to search for assets with various filters
+ * Parameters:
+ *   - user (Object): Contains authentication details (optional, for authenticated searches)
+ *   - searchParams (Object): Search parameters including:
+ *     - query (String): Text to search for in asset names
+ *     - type (Array): Types of assets to include (character, location, quest, map)
+ *     - sortBy (String): Sorting method (recent, oldest, name_asc, name_desc)
+ *     - timePeriod (String): Filter by time (week, month, year, all)
+ * Returns:
+ *   - Object: The assets retrieved from the API.
+ * Throws:
+ *   - Error if the API call fails or returns a non-OK response.
+ ****************************************************************/
+export async function searchAssets(user, searchParams = {}) {
+  try {
+    // Build the query string based on searchParams
+    const queryParams = new URLSearchParams();
+
+    // Text search (maps to 'name' field in API)
+    if (searchParams.query) {
+      // Add debug logs to see what's being sent
+      console.log("Adding search query to API params:", searchParams.query);
+      queryParams.append("name", searchParams.query);
+    }
+
+    // Asset type filter - handle multiple types
+    if (searchParams.type && searchParams.type.length > 0) {
+      // API doesn't support multiple types in one request,
+      // so for now we'll either send the first type or handle multiple
+      // types on the client side
+      console.log("Adding asset type to API params:", searchParams.type[0]);
+      queryParams.append("type", searchParams.type[0]);
+    }
+
+    // Always set visibility to public for search results
+    queryParams.append("visibility", "public");
+
+    // Always expand results to get full asset details
+    queryParams.append("expand", "true");
+
+    // Construct the URL with query parameters
+    const url = `${apiUrl}/v1/assets?${queryParams.toString()}`;
+
+    // Create headers with or without authentication
+    const headers = {
+      "Content-Type": "application/json",
+    };
+
+    // Add auth token if user is provided and authenticated
+    if (user?.id_token) {
+      headers.Authorization = `Bearer ${user.id_token}`;
+    }
+
+    if (isDebug) {
+      console.log("Search API Request:", {
+        url,
+        headers,
+        searchParams,
+      });
+    }
+
+    // Make the request
+    const response = await fetch(url, {
+      method: "GET",
+      headers,
+    });
+
+    if (!response.ok) {
+      const errorDetails = await response.text();
+      console.error(
+        `Search API call failed with status: ${response.status}, Details: ${errorDetails}`,
+      );
+      throw new Error(`API call failed with status: ${response.status}`);
+    }
+
+    const data = await response.json();
+
+    if (isDebug) {
+      console.log("Search API response:", data);
+    }
+
+    // Return the assets from the API response
+    return {
+      status: data.status,
+      assets: data.assets || [],
+    };
+  } catch (error) {
+    console.error("Error during searchAssets call:", error);
+    throw error;
+  }
+}
