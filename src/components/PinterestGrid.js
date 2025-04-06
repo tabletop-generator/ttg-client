@@ -1,5 +1,6 @@
 // /src/components/PinterestGrid.js
 import { searchAssets } from "@/api";
+import OptimizedImage from "@/components/OptimizedImage";
 import { useRouter } from "next/router";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useAuth } from "react-oidc-context";
@@ -25,26 +26,6 @@ export default function PinterestGrid({
   // Memoize stable versions of props to prevent unnecessary re-renders
   const stableSearchQuery = useMemo(() => searchQuery, [searchQuery]);
   const stableFilters = useMemo(() => filters, [filters]);
-
-  // Calculate how many placeholder images to show if needed
-  const calculateInitialBatchSize = () => {
-    // Base batch size on viewport dimensions
-    const viewportHeight = window.innerHeight;
-    const viewportWidth = window.innerWidth;
-
-    // Estimate roughly how many images should fill viewport plus a bit more
-    let columns = 2; // Default for mobile
-
-    if (viewportWidth >= 640) columns = 3; // sm breakpoint
-    if (viewportWidth >= 768) columns = 4; // md breakpoint
-    if (viewportWidth >= 1024) columns = 5; // lg breakpoint
-
-    // Estimate rows (viewport height / estimated image height) + buffer
-    const estimatedRows = Math.ceil(viewportHeight / 300) + 1;
-
-    // Return estimated number of images needed
-    return columns * estimatedRows;
-  };
 
   // Function to perform the search via API with improved loading state management
   const performSearch = useCallback(async () => {
@@ -196,19 +177,6 @@ export default function PinterestGrid({
     }
   }, [stableSearchQuery, stableFilters, auth.isAuthenticated, auth.user]);
 
-  useEffect(() => {
-    // Debug logging
-    if (stableSearchQuery) {
-      console.log("Search active:", {
-        query: stableSearchQuery,
-        filters: stableFilters,
-        resultCount: filteredAssets.length,
-        isSearchMode,
-        assets: filteredAssets,
-      });
-    }
-  }, [stableSearchQuery, stableFilters, filteredAssets, isSearchMode]);
-
   // Enhanced debounced search handling
   useEffect(() => {
     // Clear any existing timer
@@ -311,9 +279,6 @@ export default function PinterestGrid({
         </div>
       )}
 
-      {/* Loading indicator - now we won't show any indicator when updating existing results */}
-      {/* This keeps the original loading behavior but with our improved frequency logic */}
-
       {/* Responsive grid for images - only display if we have assets */}
       {filteredAssets.length > 0 && (
         <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-5 gap-4">
@@ -323,12 +288,15 @@ export default function PinterestGrid({
               className="relative overflow-hidden rounded-lg shadow-md cursor-pointer transform transition-transform hover:scale-105"
               onClick={() => handleAssetClick(asset)}
             >
-              {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img
+              {/* Replace standard img with OptimizedImage */}
+              <OptimizedImage
                 src={asset.imageUrl || "/placeholder/p01.png"}
                 alt={asset.name || "Asset Image"}
+                imageId={asset.uuid || asset.id}
+                width={300}
+                height={300}
                 className="h-full w-full object-cover aspect-square"
-                loading="eager"
+                objectFit="cover"
               />
               <div className="absolute bottom-0 left-0 right-0 bg-black bg-opacity-60 p-2">
                 <p className="text-white text-sm truncate">

@@ -18,6 +18,25 @@ const nextConfig = {
     NEXT_PUBLIC_AWS_REGION: process.env.NEXT_PUBLIC_AWS_REGION,
     NEXT_PUBLIC_API_URL: process.env.NEXT_PUBLIC_API_URL,
   },
+
+  // Add the image optimization settings
+  images: {
+    domains: [
+      "localhost", // For development environment
+      "assets.tabletop-generator.com", // Replace with your actual image domain
+    ],
+    remotePatterns: [
+      {
+        protocol: "https",
+        hostname: "**", // Allow any hostname for now, restrict this in production
+      },
+      {
+        protocol: "http",
+        hostname: "localhost",
+      },
+    ],
+    unoptimized: process.env.NODE_ENV === "development", // For static export in dev
+  },
 };
 
 export default nextConfig;

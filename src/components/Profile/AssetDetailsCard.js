@@ -1,5 +1,4 @@
-/* eslint-disable react-hooks/exhaustive-deps */
-/* eslint-disable @next/next/no-img-element */
+// Modified version of AssetDetailsCard.js with optimized images
 import {
   addAssetsToCollection,
   deletePrismaAsset,
@@ -10,6 +9,7 @@ import {
   unlikeAsset,
   updatePrismaAssetInfo,
 } from "@/api";
+import OptimizedImage from "@/components/OptimizedImage";
 import CommentsSection from "@/components/Profile/CommentsSection";
 import CreateCollectionForm from "@/components/Profile/CreateCollectionForm";
 import styles from "@/styles/AssetDetailsCard.module.css";
@@ -58,23 +58,13 @@ export default function AssetDetailsCard({
   const [isSaving, setIsSaving] = useState(false);
   const [loginPromptVisible, setLoginPromptVisible] =
     useState(!isAuthenticated);
+  const [imageLoaded, setImageLoaded] = useState(false);
 
   const defaultImage = "/placeholder/p01.png"; // fallback image
 
   const collectionsDropdownRef = useRef(null);
   const starButtonRef = useRef(null);
   const dropdownRef = useRef(null);
-
-  // For unauthenticated users, show a login prompt for certain actions
-  const handleUnauthenticatedAction = (actionType) => {
-    const confirmLogin = window.confirm(
-      `You need to be logged in to ${actionType} this asset. Would you like to log in now?`,
-    );
-
-    if (confirmLogin) {
-      auth.signinRedirect(); // Redirect to login
-    }
-  };
 
   // Fetch collections
   useEffect(() => {
@@ -243,6 +233,17 @@ export default function AssetDetailsCard({
 
     setIsStarred(!isStarred);
     setShowCollectionDropdown(true);
+  };
+
+  // For unauthenticated users, show a login prompt for certain actions
+  const handleUnauthenticatedAction = (actionType) => {
+    const confirmLogin = window.confirm(
+      `You need to be logged in to ${actionType} this asset. Would you like to log in now?`,
+    );
+
+    if (confirmLogin) {
+      auth.signinRedirect(); // Redirect to login
+    }
   };
 
   // Close the collection dropdown when clicking outside
@@ -494,12 +495,20 @@ export default function AssetDetailsCard({
   return (
     <div className={styles.assetCardContainer}>
       <div className={styles.assetCard}>
-        {/* Asset Image */}
-        <img
-          src={asset.imageUrl || defaultImage}
-          alt={asset.name || "Unknown Asset"}
-          className="w-full rounded-lg mb-6"
-        />
+        {/* Asset Image - replace with OptimizedImage */}
+        <div className="relative w-full mb-6 rounded-lg overflow-hidden">
+          <OptimizedImage
+            src={asset.imageUrl || defaultImage}
+            alt={asset.name || "Unknown Asset"}
+            imageId={asset.uuid || asset.id}
+            width={800}
+            height={600}
+            className="w-full rounded-lg"
+            priority={true} // Load with priority since it's the main content
+            quality={85} // Higher quality for detail view
+            onLoadingComplete={() => setImageLoaded(true)}
+          />
+        </div>
 
         {/* Enhanced Guest Preview Mode Banner - Only show if not dismissed */}
         {isGuestPreview && showGuestBanner && (

@@ -1,4 +1,5 @@
-// Updated AssetGrid.js with ownership check
+// Updated AssetGrid.js with optimized images
+import OptimizedImage from "@/components/OptimizedImage";
 import { useRouter } from "next/router";
 
 export default function AssetGrid({ assets, isOwnProfile = true }) {
@@ -23,14 +24,18 @@ export default function AssetGrid({ assets, isOwnProfile = true }) {
           {assets.map((asset) => (
             <div
               key={asset.uuid}
-              className="bg-gray-700 rounded-lg p-4 text-center"
+              className="bg-gray-700 rounded-lg p-4 text-center cursor-pointer transition transform hover:scale-105"
               onClick={() => handleAssetClick(asset.uuid)}
             >
-              {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img
+              {/* Optimized Image Component */}
+              <OptimizedImage
                 src={asset.imageUrl}
                 alt={asset.name}
+                width={400}
+                height={400}
                 className="w-full aspect-square object-cover rounded-md mb-4"
+                imageId={asset.uuid || asset.id}
+                objectFit="cover"
               />
               <h5 className="text-lg font-bold text-white">{asset.name}</h5>
               <p className="text-gray-400 capitalize">{asset.type}</p>

@@ -1,16 +1,17 @@
-// src/components/Profile/CollectionGrid.js
+// src/components/Profile/CollectionGrid.js - optimized for image loading
 import {
   getAssetByID,
   getCollectionById,
   getUser,
   postCollection,
 } from "@/api";
+import OptimizedImage from "@/components/OptimizedImage"; // Import the optimized image component
 import CreateCollectionForm from "@/components/Profile/CreateCollectionForm";
 import { useRouter } from "next/router";
 import { useCallback, useEffect, useState } from "react";
 import { useAuth } from "react-oidc-context";
 
-// Cache key prefix for localStorage
+// Cache management enhanced with the component from OptimizedImage.js
 const IMAGE_CACHE_PREFIX = "collection_image_";
 const IMAGE_CACHE_EXPIRY = 24 * 60 * 60 * 1000; // 24 hours in milliseconds
 
@@ -272,14 +273,23 @@ export default function CollectionGrid({
                   {shouldShowCollection && (
                     <button
                       onClick={() => onCollectionClick(collection)}
-                      className="relative w-full h-40 bg-cover bg-center rounded-lg text-white text-xl font-bold flex items-center justify-center hover:opacity-90 shadow-lg"
-                      style={{
-                        backgroundImage: `url(${bgUrl})`,
-                      }}
+                      className="relative w-full h-40 rounded-lg text-white text-xl font-bold flex items-center justify-center hover:opacity-90 shadow-lg overflow-hidden"
                     >
+                      {/* Replace background-image with OptimizedImage */}
+                      <div className="absolute inset-0">
+                        <OptimizedImage
+                          src={bgUrl}
+                          alt={collection.name || "Collection"}
+                          fill={true}
+                          imageId={`collection-${collection.id}`}
+                          objectFit="cover"
+                          className="z-0"
+                        />
+                      </div>
+
                       {/* Overlay for readability */}
-                      <div className="absolute inset-0 bg-black bg-opacity-40 rounded-lg"></div>
-                      <span className="relative z-10">{collection.name}</span>
+                      <div className="absolute inset-0 bg-black bg-opacity-40 z-10"></div>
+                      <span className="relative z-20">{collection.name}</span>
                     </button>
                   )}
                 </div>
