@@ -1,4 +1,5 @@
 import { getAssetImage } from "@/api";
+import LoadingAnimation from "@/components/LoadingAnimation";
 import { useUser } from "@/context/UserContext";
 import logger from "@/utils/logger";
 import { useRouter } from "next/router";
@@ -144,133 +145,143 @@ export default function QuestForm({ onBack }) {
   };
 
   return (
-    <form onSubmit={handleSubmit} className="space-y-8">
-      <div className="space-y-6">
-        <h2 className="text-lg font-semibold text-white">Create Quest</h2>
-        {error && <p className="text-red-500 font-bold">{error}</p>}
+    <>
+      {loading && (
+        <LoadingAnimation message="Crafting your epic quest..." error={error} />
+      )}
 
-        {/* Quest Name */}
-        <div>
-          <label
-            htmlFor="name"
-            className="block text-sm font-medium text-white"
-          >
-            Quest Name
-          </label>
-          <input
-            type="text"
-            id="name"
-            name="name"
-            value={formData.name}
-            onChange={handleChange}
-            className="block w-full mt-1 h-12 rounded-md bg-gray-800 text-white placeholder-gray-400 px-3 focus:ring-indigo-500 focus:border-indigo-500"
-            placeholder="Enter quest name"
-          />
-        </div>
+      <form onSubmit={handleSubmit} className="space-y-8">
+        <div className="space-y-6">
+          <h2 className="text-lg font-semibold text-white">Create Quest</h2>
+          {error && <p className="text-red-500 font-bold">{error}</p>}
 
-        {/* Dropdown Fields */}
-        {[
-          { id: "type", label: "Quest Type", options: questTypes },
-          { id: "tone", label: "Tone", options: questTones },
-          { id: "complexity", label: "Complexity", options: complexityLevels },
-        ].map(({ id, label, options }) => (
-          <div key={id}>
+          {/* Quest Name */}
+          <div>
             <label
-              htmlFor={id}
+              htmlFor="name"
               className="block text-sm font-medium text-white"
             >
-              {label}
+              Quest Name
             </label>
-            <select
-              id={id}
-              name={id}
-              value={formData[id]}
+            <input
+              type="text"
+              id="name"
+              name="name"
+              value={formData.name}
               onChange={handleChange}
-              className={`block w-full mt-1 h-12 rounded-md bg-gray-800 text-white focus:ring-indigo-500 focus:border-indigo-500 px-3 ${
-                missingFields.includes(id)
-                  ? "border-[#FF6347] border-2"
-                  : "border-gray-600"
-              }`}
-            >
-              <option value="">Select {label.toLowerCase()}</option>
-              {options.map((option) => (
-                <option key={option} value={option}>
-                  {option}
-                </option>
-              ))}
-            </select>
+              className="block w-full mt-1 h-12 rounded-md bg-gray-800 text-white placeholder-gray-400 px-3 focus:ring-indigo-500 focus:border-indigo-500"
+              placeholder="Enter quest name"
+            />
           </div>
-        ))}
 
-        {/* Binary Selections (Checkboxes) */}
-        <div className="grid grid-cols-2 gap-4">
+          {/* Dropdown Fields */}
           {[
-            { id: "hasCombat", label: "Combat Encounters" },
-            { id: "hasPuzzles", label: "Puzzles/Riddles" },
-            { id: "hasSkillChallenges", label: "Skill Challenges" },
-            { id: "hasDilemmas", label: "Moral Dilemmas" },
-          ].map(({ id, label }) => (
-            <div key={id} className="flex items-center">
-              <input
-                type="checkbox"
-                id={id}
-                name={id}
-                checked={formData[id]}
-                onChange={handleCheckboxChange}
-                className="h-5 w-5 text-indigo-600 border-gray-300 rounded"
-              />
-              <label htmlFor={id} className="ml-2 text-white">
+            { id: "type", label: "Quest Type", options: questTypes },
+            { id: "tone", label: "Tone", options: questTones },
+            {
+              id: "complexity",
+              label: "Complexity",
+              options: complexityLevels,
+            },
+          ].map(({ id, label, options }) => (
+            <div key={id}>
+              <label
+                htmlFor={id}
+                className="block text-sm font-medium text-white"
+              >
                 {label}
               </label>
+              <select
+                id={id}
+                name={id}
+                value={formData[id]}
+                onChange={handleChange}
+                className={`block w-full mt-1 h-12 rounded-md bg-gray-800 text-white focus:ring-indigo-500 focus:border-indigo-500 px-3 ${
+                  missingFields.includes(id)
+                    ? "border-[#FF6347] border-2"
+                    : "border-gray-600"
+                }`}
+              >
+                <option value="">Select {label.toLowerCase()}</option>
+                {options.map((option) => (
+                  <option key={option} value={option}>
+                    {option}
+                  </option>
+                ))}
+              </select>
+            </div>
+          ))}
+
+          {/* Binary Selections (Checkboxes) */}
+          <div className="grid grid-cols-2 gap-4">
+            {[
+              { id: "hasCombat", label: "Combat Encounters" },
+              { id: "hasPuzzles", label: "Puzzles/Riddles" },
+              { id: "hasSkillChallenges", label: "Skill Challenges" },
+              { id: "hasDilemmas", label: "Moral Dilemmas" },
+            ].map(({ id, label }) => (
+              <div key={id} className="flex items-center">
+                <input
+                  type="checkbox"
+                  id={id}
+                  name={id}
+                  checked={formData[id]}
+                  onChange={handleCheckboxChange}
+                  className="h-5 w-5 text-indigo-600 border-gray-300 rounded"
+                />
+                <label htmlFor={id} className="ml-2 text-white">
+                  {label}
+                </label>
+              </div>
+            ))}
+          </div>
+
+          {/* Freeform Text Inputs */}
+          {[
+            { id: "location", label: "Location" },
+            { id: "objective", label: "Objective" },
+            { id: "antagonist", label: "Antagonist" },
+            { id: "notableNpcs", label: "Notable NPCs" },
+            { id: "customDescription", label: "Custom Description" },
+          ].map(({ id, label }) => (
+            <div key={id}>
+              <label
+                htmlFor={id}
+                className="block text-sm font-medium text-white"
+              >
+                {label}
+              </label>
+              <textarea
+                id={id}
+                name={id}
+                rows={3}
+                value={formData[id]}
+                onChange={handleChange}
+                className="block w-full mt-1 rounded-md bg-gray-800 text-white placeholder-gray-400 focus:ring-indigo-500 focus:border-indigo-500 px-3"
+                placeholder={`Describe ${label.toLowerCase()}`}
+              />
             </div>
           ))}
         </div>
 
-        {/* Freeform Text Inputs */}
-        {[
-          { id: "location", label: "Location" },
-          { id: "objective", label: "Objective" },
-          { id: "antagonist", label: "Antagonist" },
-          { id: "notableNpcs", label: "Notable NPCs" },
-          { id: "customDescription", label: "Custom Description" },
-        ].map(({ id, label }) => (
-          <div key={id}>
-            <label
-              htmlFor={id}
-              className="block text-sm font-medium text-white"
-            >
-              {label}
-            </label>
-            <textarea
-              id={id}
-              name={id}
-              rows={3}
-              value={formData[id]}
-              onChange={handleChange}
-              className="block w-full mt-1 rounded-md bg-gray-800 text-white placeholder-gray-400 focus:ring-indigo-500 focus:border-indigo-500 px-3"
-              placeholder={`Describe ${label.toLowerCase()}`}
-            />
-          </div>
-        ))}
-      </div>
-
-      {/* Buttons */}
-      <div className="flex justify-end gap-4">
-        <button
-          type="button"
-          onClick={onBack}
-          className="px-4 py-2 text-sm font-medium text-white bg-gray-700 rounded-md hover:bg-gray-600"
-        >
-          Back
-        </button>
-        <button
-          type="submit"
-          className="px-4 py-2 text-sm font-medium text-white bg-indigo-600 rounded-md hover:bg-indigo-500"
-          disabled={loading}
-        >
-          {loading ? "Submitting..." : "Submit"}
-        </button>
-      </div>
-    </form>
+        {/* Buttons */}
+        <div className="flex justify-end gap-4">
+          <button
+            type="button"
+            onClick={onBack}
+            className="px-4 py-2 text-sm font-medium text-white bg-gray-700 rounded-md hover:bg-gray-600"
+          >
+            Back
+          </button>
+          <button
+            type="submit"
+            className="px-4 py-2 text-sm font-medium text-white bg-indigo-600 rounded-md hover:bg-indigo-500"
+            disabled={loading}
+          >
+            {loading ? "Submitting..." : "Submit"}
+          </button>
+        </div>
+      </form>
+    </>
   );
 }
