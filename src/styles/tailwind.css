@@ -1,3 +1,34 @@
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
+
+/* Custom animations */
+@keyframes loadingProgress {
+  0% {
+    width: 0%;
+  }
+  20% {
+    width: 20%;
+  }
+  50% {
+    width: 40%;
+  }
+  70% {
+    width: 60%;
+  }
+  85% {
+    width: 75%;
+  }
+  95% {
+    width: 90%;
+  }
+  100% {
+    width: 95%;
+  }
+}
+
+@layer utilities {
+  .animate-loadingProgress {
+    animation: loadingProgress 4s ease-in-out infinite;
+  }
+}
