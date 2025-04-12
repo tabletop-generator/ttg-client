@@ -194,7 +194,13 @@ export default function PinterestGrid({
     } finally {
       setLoading(false);
     }
-  }, [stableSearchQuery, stableFilters, auth.isAuthenticated, auth.user]);
+  }, [
+    stableSearchQuery,
+    stableFilters,
+    auth.isAuthenticated,
+    auth.user,
+    isPendingSearch,
+  ]);
 
   useEffect(() => {
     // Debug logging
