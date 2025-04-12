@@ -130,7 +130,7 @@ const cognitoAuthConfig = {
                   console.log("Stored user:", userData);
                 }
 
-                // Store the userData obj in local storage to be used in src/context/UserContext.js so user
+                // Store the userData obj in local storage to be used in src/context/UserContext so user
                 // will stay consistent through all app areas
                 localStorage.setItem("userInfo", JSON.stringify(userData));
 
