@@ -14,7 +14,7 @@ const createOptions = [
   },
   {
     id: "locations",
-    title: "Environment",
+    title: "Location",
     image: "/placeholder/card_environment.png", // Use the second image
   },
   {
@@ -24,7 +24,7 @@ const createOptions = [
   },
   {
     id: "maps",
-    title: "TTG Map",
+    title: "Map",
     image: "/placeholder/card_map.png", // Use the fourth image
   },
 ];
