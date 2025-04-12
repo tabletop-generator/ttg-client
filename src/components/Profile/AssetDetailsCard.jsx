@@ -13,7 +13,7 @@ import {
 import CommentsSection from "@/components/Profile/CommentsSection";
 import CreateCollectionForm from "@/components/Profile/CreateCollectionForm";
 import styles from "@/styles/AssetDetailsCard.module.css";
-import { Heart, MoreHorizontal, Share2, Star } from "lucide-react";
+import { Heart, MoreHorizontal, Star } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/router";
 import { useEffect, useRef, useState } from "react";
@@ -51,8 +51,6 @@ export default function AssetDetailsCard({
   const [showCollectionDropdown, setShowCollectionDropdown] = useState(false);
   const [likes, setLikes] = useState(asset?.likes || 0);
   const [isLiked, setIsLiked] = useState(false);
-  const [shareMessage, setShareMessage] = useState("");
-  const [shareMessageType, setShareMessageType] = useState("");
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [isInCollection, setIsInCollection] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
@@ -196,44 +194,6 @@ export default function AssetDetailsCard({
       }
     }
   }, [isAuthenticated]);
-
-  // ---- HANDLERS ----
-  const handleShare = () => {
-    if (visibility === "private") {
-      setShareMessage(
-        "This asset is private and can't be shared. Public assets can be shared.",
-      );
-      setShareMessageType("error");
-      setTimeout(() => {
-        setShareMessage("");
-        setShareMessageType("");
-      }, 5000);
-      return;
-    }
-
-    // Create full URL with asset ID
-    const assetUrl = `${window.location.origin}/profile/${asset.uuid || asset.id}`;
-
-    navigator.clipboard
-      .writeText(assetUrl)
-      .then(() => {
-        setShareMessage("Copied to Clipboard!");
-        setShareMessageType("success");
-        setTimeout(() => {
-          setShareMessage("");
-          setShareMessageType("");
-        }, 2000);
-      })
-      .catch((err) => {
-        console.error("Failed to copy:", err);
-        setShareMessage("Failed to copy");
-        setShareMessageType("error");
-        setTimeout(() => {
-          setShareMessage("");
-          setShareMessageType("");
-        }, 2000);
-      });
-  };
 
   const handleStar = () => {
     if (!isAuthenticated) {
@@ -617,7 +577,7 @@ export default function AssetDetailsCard({
           </div>
         )}
 
-        {/* Buttons: Like, Star (for collection), Share, Edit */}
+        {/* Buttons: Like, Star (for collection), Edit */}
         {!isEditing && (
           <div className="flex items-center justify-center gap-4 mb-6">
             {/* Like Button */}
@@ -682,38 +642,6 @@ export default function AssetDetailsCard({
                       onCreate={handleCreateCollection}
                     />
                   </div>
-                </div>
-              )}
-            </div>
-
-            {/* Share Button */}
-            <div className="relative">
-              <button
-                onClick={handleShare}
-                className={`w-10 h-10 ${styles.roundedButton} ${
-                  shareMessageType === "success"
-                    ? styles.bgGreenButton
-                    : styles.bgGrayButton
-                }`}
-                title="Share asset"
-              >
-                <Share2 className="w-5 h-5 text-white fill-current" />
-              </button>
-              {shareMessage && (
-                <div
-                  className={`absolute bottom-full mb-2 left-1/2 -translate-x-1/2 transform px-3 py-1 text-sm rounded shadow-lg z-10 whitespace-nowrap ${
-                    shareMessageType === "error"
-                      ? "bg-red-500 text-white"
-                      : "bg-green-500 text-white"
-                  }`}
-                >
-                  {shareMessage}
-                  <div
-                    className="absolute bottom-0 left-1/2 transform translate-y-full -translate-x-1/2 w-0 h-0
-                    border-l-[6px] border-l-transparent
-                    border-r-[6px] border-r-transparent
-                    border-t-[6px] border-t-white"
-                  ></div>
                 </div>
               )}
             </div>

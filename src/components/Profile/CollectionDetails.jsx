@@ -8,7 +8,7 @@ import {
 } from "@/api";
 import EditCollectionForm from "@/components/Profile/EditCollectionForm";
 import styles from "@/styles/CollectionDetails.module.css";
-import { MoreHorizontal, Plus, Share2, X } from "lucide-react";
+import { MoreHorizontal, Plus, X } from "lucide-react";
 import { useRouter } from "next/router";
 import { useEffect, useRef, useState } from "react";
 import { useAuth } from "react-oidc-context";
@@ -36,8 +36,6 @@ export default function CollectionDetails({
   // State for full collection details
   const [currentCollection, setCurrentCollection] = useState(collection);
   const [updatedAssets, setUpdatedAssets] = useState([]);
-  const [shareMessage, setShareMessage] = useState("");
-  const [shareMessageType, setShareMessageType] = useState("");
   const dropdownRef = useRef(null);
 
   // Check if the current user owns this collection either by prop or owner ID comparison
@@ -134,42 +132,6 @@ export default function CollectionDetails({
   const handleAssetClick = (uuid) => {
     sessionStorage.setItem("previousPage", window.location.href);
     router.push(`/profile/${uuid}`);
-  };
-
-  // Build a shareable URL for this collection and handle share action
-  const collectionUrl = `${window.location.origin}/profile?tab=collections&collectionId=${currentCollection.id}`;
-
-  const handleShare = () => {
-    if (currentCollection.visibility === "private") {
-      setShareMessage(
-        "This collection is private and can't be shared. Public collections can be shared.",
-      );
-      setShareMessageType("error");
-      setTimeout(() => {
-        setShareMessage("");
-        setShareMessageType("");
-      }, 5000);
-      return;
-    }
-    navigator.clipboard
-      .writeText(collectionUrl)
-      .then(() => {
-        setShareMessage("Copied to Clipboard!");
-        setShareMessageType("success");
-        setTimeout(() => {
-          setShareMessage("");
-          setShareMessageType("");
-        }, 2000);
-      })
-      .catch((err) => {
-        console.error("Failed to copy:", err);
-        setShareMessage("Failed to copy");
-        setShareMessageType("error");
-        setTimeout(() => {
-          setShareMessage("");
-          setShareMessageType("");
-        }, 2000);
-      });
   };
 
   // Handle delete button click (only for collection owner)
@@ -271,39 +233,6 @@ export default function CollectionDetails({
                   <Plus size={20} />
                 </button>
               )}
-
-              {/* Share Button */}
-              <div className="relative">
-                <button
-                  onClick={handleShare}
-                  className={`w-10 h-10 ${styles.roundedButton} ${
-                    shareMessageType === "success"
-                      ? styles.bgGreenButton
-                      : styles.bgGrayButton
-                  }`}
-                  title="Share asset"
-                >
-                  <Share2 className="w-5 h-5 text-white fill-current" />
-                </button>
-
-                {shareMessage && (
-                  <div
-                    className={`absolute bottom-full mb-2 left-1/2 -translate-x-1/2 transform px-3 py-1 text-sm rounded shadow-lg z-10 whitespace-nowrap ${
-                      shareMessageType === "error"
-                        ? "bg-red-500 text-white"
-                        : "bg-green-500 text-white"
-                    }`}
-                  >
-                    {shareMessage}
-                    <div
-                      className="absolute bottom-0 left-1/2 transform translate-y-full -translate-x-1/2 w-0 h-0
-                      border-l-[6px] border-l-transparent
-                      border-r-[6px] border-r-transparent
-                      border-t-[6px] border-t-white"
-                    ></div>
-                  </div>
-                )}
-              </div>
 
               {/* More options menu – only for collection owner */}
               {isCollectionOwner && (
