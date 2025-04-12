@@ -2,132 +2,75 @@
 
 [![CI](https://github.com/tabletop-generator/client/actions/workflows/ci.yml/badge.svg)](https://github.com/tabletop-generator/client/actions/workflows/ci.yml)
 
+## Contributing
+
+See [CONTRIBUTING.md](CONTRIBUTING.md)
+
 ## Prerequisites
 
-- [NVM](https://github.com/nvm-sh/nvm)
+- [nvm](https://github.com/nvm-sh/nvm) or [fnm](https://github.com/Schniz/fnm)
 - [Node.js v20.x 'Iron' (LTS)](https://nodejs.org/en)
 - [Git](https://git-scm.com/)
 - [Visual Studio Code](https://code.visualstudio.com/)
 
 ## Setup
 
-- `git clone <url>`: Clone the project to your workspace
+You will need to provide the following environment variables:
 
-- `nvm install`: Install and use the correct version of node for the project
+- `NEXT_PUBLIC_AWS_COGNITO_POOL_ID`: Your Amazon Cognito User Pool ID
+- `NEXT_PUBLIC_AWS_COGNITO_CLIENT_ID`: Your Amazon Cognito App Client ID
+- `NEXT_PUBLIC_COGNITO_DOMAIN`: Your Amazon Cognito Managed Login domain
+- `NEXT_PUBLIC_OAUTH_SIGN_IN_REDIRECT_URL`: Your app's sign in redirect URL as configured in Amazon Cognito
+- `NEXT_PUBLIC_OAUTH_SIGN_OUT_REDIRECT_URL`: Your app's sign out redirect URL as configured in Amazon Cognito
+- `NEXT_PUBLIC_AWS_REGION`: Your Amazon Cognito User Pool's region
+- `NEXT_PUBLIC_API_URL`: Your [ttg-server](https://github.com/tabletop-generator/ttg-server/) deployment URL
 
-- `npm i`: Install required packages using npm
-
-- Enable these VSCode extensions in the project workspace:
-
-  - [Code Spell Checker](https://marketplace.visualstudio.com/items?itemName=streetsidesoftware.code-spell-checker)
-  - [ESLint](https://marketplace.visualstudio.com/items?itemName=dbaeumer.vscode-eslint)
-  - [Prettier](https://marketplace.visualstudio.com/items?itemName=esbenp.prettier-vscode)
-
-## Running
-
-### Run On Host Machine
-
-See [Scripts > Running](#running-1) below.
-
-## Scripts
-
-These scripts are located in `package.json` and can be run using `npm run <script>`.
-
-### Running
-
-- `dev`: Starts Next.js in development mode.
-- `build`: Builds the application for production usage and outputs the generated static site to `out/`.
-- `serve`: Serves the built static files from `out/`.
-
-### Linting & Formatting
-
-- `lint:` Run Next.js's built-in ESLint configuration.
-- `prettier`: Runs Prettier to format all files in the project directory.
-
-## Workflow
-
-Please follow the [GitHub flow](https://docs.github.com/en/get-started/using-github/github-flow) for contributions:
-
-1. **Update your local main branch**
-
-   Switch to your main branch and pull the latest changes from the remote repository:
+1. Clone the project to your workspace.
 
    ```bash
-   git switch main
-   git pull --prune
+   git clone <url> ttg-client
+   cd ttg-client
    ```
 
-   - The `--prune` option removes any references to branches that no longer exist on the remote.
-
-2. **Create a new branch**
-
-   Name your branch following the convention `issue-number` (e.g., `issue-1`):
+2. Create a .env file with development presets. Then enter your own environment variables from the links above.
 
    ```bash
-   git switch -c <issue-number> main
+   cp .env.example .env
    ```
 
-   - If no issue exists for the change you are making, please [create one](https://github.com/tabletop-generator/client/issues/new/choose).
+3. Install and use the project's supported Node.js version.
 
-3. **Make your changes**
-
-   Start the development server:
+   With nvm:
 
    ```bash
-   npm run dev
+   nvm install
    ```
 
-4. **Test your changes**
-
-   Run the following checks to ensure everything works as expected:
+   With fnm:
 
    ```bash
-   npm run lint
+   fnm install
+   ```
+
+4. Install dependencies.
+
+   ```bash
+   npm install
+   ```
+
+5. Build the website.
+
+   ```bash
    npm run build
-   npm start:static
    ```
 
-5. **Review your changes**
-
-   Check which files have been changed:
+6. Serve the website on `localhost:3000`.
 
    ```bash
-   git status
+   npm run serve
    ```
 
-6. **Stage your changes**
-
-   Add the relevant files to staging:
-
-   ```bash
-   git add <files>
-   ```
-
-7. **Commit your changes**
-
-   Write a meaningful commit message:
-
-   ```bash
-   git commit -m "<commit message>"
-   ```
-
-8. **Push your branch**
-
-   Push your changes and set the upstream branch:
-
-   ```bash
-   git push -u origin <your-branch-name>
-   ```
-
-9. **Create a pull request**
-
-   [Create a pull request](https://github.com/tabletop-generator/client/compare) on GitHub. Fill in the template and link it to the issue using:
-
-   ```txt
-   Fixes #[issue number]
-   ```
-
-## Documentation
+## Solution Stack
 
 - **Language:** [JavaScript](https://developer.mozilla.org/en-US/docs/Web/JavaScript)
 - **Framework:** [Next.js](https://nextjs.org/docs)
