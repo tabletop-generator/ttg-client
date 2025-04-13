@@ -121,15 +121,6 @@ export default function SearchBar() {
           isFocused ? "text-white" : "text-gray-900"
         }`}
       />
-      {/* Optional visual search button */}
-      {searchTerm && (
-        <button
-          onClick={triggerSearch}
-          className="p-2 mr-2 bg-indigo-600 rounded-md text-white hover:bg-indigo-500"
-        >
-          Search
-        </button>
-      )}
     </div>
   );
 }
