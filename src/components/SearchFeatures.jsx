@@ -130,7 +130,8 @@ export default function SearchFeatures({
   const responsiveSpacing = getResponsiveSpacing();
 
   return (
-    <div className={`w-full flex flex-col ${responsiveSpacing}`}>
+    // Apply a class that sets all text to light colors and backgrounds to dark
+    <div className={`w-full flex flex-col ${responsiveSpacing} text-white`}>
       {/* Always Visible - Asset Type Checkboxes - No background, cleaner UI */}
       <div className="flex justify-center">
         <div className="px-6 py-2 w-full max-w-3xl">
@@ -195,11 +196,11 @@ export default function SearchFeatures({
         }`}
       >
         <div className="flex flex-col sm:flex-row justify-center items-center gap-4 p-4 rounded-lg max-w-3xl mx-auto">
-          {/* Sort By Dropdown - Using Catalyst Dropdown with custom styling */}
+          {/* Sort By Dropdown - Using Catalyst Dropdown with custom styling but forcing dark theme colors */}
           <div className="w-36 sm:w-40">
             <Dropdown>
               <DropdownButton className="w-full justify-between bg-gray-900 border border-gray-700">
-                <span className="text-sm">
+                <span className="text-sm text-white">
                   Sort:{" "}
                   {sortOption === "recent"
                     ? "Recent"
@@ -215,27 +216,39 @@ export default function SearchFeatures({
                 anchor="bottom"
                 className="!bg-gray-900 border border-gray-700 !w-36 sm:!w-40"
               >
-                <DropdownItem onClick={() => handleSortSelect("recent")}>
+                <DropdownItem
+                  onClick={() => handleSortSelect("recent")}
+                  className="text-white"
+                >
                   Date (Recent)
                 </DropdownItem>
-                <DropdownItem onClick={() => handleSortSelect("oldest")}>
+                <DropdownItem
+                  onClick={() => handleSortSelect("oldest")}
+                  className="text-white"
+                >
                   Date (Oldest)
                 </DropdownItem>
-                <DropdownItem onClick={() => handleSortSelect("name_asc")}>
+                <DropdownItem
+                  onClick={() => handleSortSelect("name_asc")}
+                  className="text-white"
+                >
                   Name (A-Z)
                 </DropdownItem>
-                <DropdownItem onClick={() => handleSortSelect("name_desc")}>
+                <DropdownItem
+                  onClick={() => handleSortSelect("name_desc")}
+                  className="text-white"
+                >
                   Name (Z-A)
                 </DropdownItem>
               </DropdownMenu>
             </Dropdown>
           </div>
 
-          {/* Time Period Dropdown - Using Catalyst Dropdown with custom styling */}
+          {/* Time Period Dropdown - Using Catalyst Dropdown with forced dark theme styling */}
           <div className="w-36 sm:w-40">
             <Dropdown>
               <DropdownButton className="w-full justify-between bg-gray-900 border border-gray-700">
-                <span className="text-sm">
+                <span className="text-sm text-white">
                   Period:{" "}
                   {timeOption === "week"
                     ? "Week"
@@ -251,16 +264,28 @@ export default function SearchFeatures({
                 anchor="bottom"
                 className="!bg-gray-900 border border-gray-700 !w-36 sm:!w-40"
               >
-                <DropdownItem onClick={() => handleTimeSelect("week")}>
+                <DropdownItem
+                  onClick={() => handleTimeSelect("week")}
+                  className="text-white"
+                >
                   Past Week
                 </DropdownItem>
-                <DropdownItem onClick={() => handleTimeSelect("month")}>
+                <DropdownItem
+                  onClick={() => handleTimeSelect("month")}
+                  className="text-white"
+                >
                   Past Month
                 </DropdownItem>
-                <DropdownItem onClick={() => handleTimeSelect("year")}>
+                <DropdownItem
+                  onClick={() => handleTimeSelect("year")}
+                  className="text-white"
+                >
                   Past Year
                 </DropdownItem>
-                <DropdownItem onClick={() => handleTimeSelect("all")}>
+                <DropdownItem
+                  onClick={() => handleTimeSelect("all")}
+                  className="text-white"
+                >
                   All Time
                 </DropdownItem>
               </DropdownMenu>
@@ -268,6 +293,32 @@ export default function SearchFeatures({
           </div>
         </div>
       </div>
+      {/* CSS to force dark mode styles regardless of browser/OS settings */}
+      <style jsx global>{`
+        /* This ensures the component always uses dark mode colors */
+        .text-black,
+        .text-zinc-950,
+        .text-zinc-900,
+        .text-zinc-800,
+        .text-zinc-700 {
+          color: white !important;
+        }
+
+        /* Force backgrounds to stay dark */
+        .bg-white,
+        .bg-zinc-50,
+        .bg-zinc-100,
+        .bg-zinc-200 {
+          background-color: #1f2937 !important; /* bg-gray-900 equivalent */
+        }
+
+        /* Force dark borders */
+        .border-zinc-300,
+        .border-zinc-200,
+        .border-zinc-100 {
+          border-color: #374151 !important; /* border-gray-700 equivalent */
+        }
+      `}</style>
     </div>
   );
 }
